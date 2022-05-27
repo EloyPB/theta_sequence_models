@@ -136,10 +136,12 @@ class SmartClass:
 
     @classmethod
     def possibly_old_instance(cls, config: Config, only_return_if_new=False):
-        # DECIDE WHETHER WE NEED A NEW INSTANCE
-
-        need_new = False
         self_pickles_path = cls.complete_path(config.pickles_root_path, config.identifier, config.variants)
+        if not os.path.exists(self_pickles_path):
+            os.makedirs(self_pickles_path)
+
+        # DECIDE WHETHER WE NEED A NEW INSTANCE
+        need_new = False
 
         # did the code of this class or any of its parents change?
         for my_class in inspect.getmro(cls)[:-1]:
@@ -198,8 +200,6 @@ class SmartClass:
                 instance = cls(config, dependencies_dict, **parameters_dict)
 
                 # dump instance and dependency time stamps
-                if not os.path.isdir(self_pickles_path):
-                    os.makedirs(self_pickles_path)
                 with open(instance_pickle_path, 'wb') as instance_f:
                     pickle.dump(instance, instance_f)
                 with open(times_pickle_path, 'wb') as times_f:
@@ -235,9 +235,6 @@ class SmartClass:
                 if extract_relevant(something) == pickle.load(f):
                     return False
 
-        folder = path[:len(path) - path[::-1].index('/')]
-        if not os.path.exists(folder):
-            os.makedirs(folder)
         with open(path, 'wb') as f:
             pickle.dump(extract_relevant(something), f)
         return True
@@ -268,7 +265,7 @@ if __name__ == "__main__":
             SmartClass.__init__(self, config, d)
             self.b = b
 
-    my_config = Config(identifier=1, variants={'A': 'Special', 'B': 'Cool'}, pickle_instances=False,
+    my_config = Config(identifier=1, variants={'A': 'Special', 'B': 'Cool'}, pickle_instances=True,
                        parameters_path="parameters")
     my_b = B.current_instance(my_config)
 
