@@ -54,12 +54,8 @@ class SmartClass:
 
     @classmethod
     def complete_path(cls, root_path, identifier, variants):
-        return f"{root_path}/{cls.tag(identifier, variants)}/{cls.__name__}/"
-
-    @classmethod
-    def tag(cls, identifier, variants):
-        id_tag = f"{identifier}_" if len(identifier) else ""
-        return id_tag + '_'.join(cls.variant_tags(variants))
+        tag = (f"{identifier}_" if len(identifier) else "") + '_'.join(cls.variant_tags(variants))
+        return f"{root_path}/{tag}/{cls.__name__}/"
 
     @classmethod
     def variant_tags(cls, variants):
@@ -272,7 +268,8 @@ if __name__ == "__main__":
             SmartClass.__init__(self, config, d)
             self.b = b
 
-    my_config = Config(identifier=1, variants={'A': 'Special', 'B': 'Cool'}, pickle_instances=True, parameters_path="parameters")
+    my_config = Config(identifier=1, variants={'A': 'Special', 'B': 'Cool'}, pickle_instances=False,
+                       parameters_path="parameters")
     my_b = B.current_instance(my_config)
 
     print(my_b.b)
