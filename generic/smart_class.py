@@ -43,7 +43,7 @@ class SmartClass:
 
         self.d = d
 
-    def update_config(self, config):
+    def update_config(self, config: Config):
         self.config = config
 
         self.figures_path = self.complete_path(config.figures_root_path, config.identifier, config.variants)
@@ -219,24 +219,24 @@ class SmartClass:
         return latest_times
 
     @staticmethod
-    def changed(path, something, extract_relevant=lambda x: x):
+    def changed(path, something, extractor=lambda x: x):
         """Checks whether something matches with a previous pickled version. If there
         is no match, a new pickle is created.
 
         Args:
             path (string): Path where pickles will be stored.
             something (object): Function, class, built-in type, etc. to compare.
-            extract_relevant (function): A function that extracts the relevant part to be compared.
+            extractor (function): A function that extracts the relevant part to be compared.
         Returns:
             (bool): Whether the source code matched that of a previous pickled version.
         """
         if os.path.isfile(path):
             with open(path, 'rb') as f:
-                if extract_relevant(something) == pickle.load(f):
+                if extractor(something) == pickle.load(f):
                     return False
 
         with open(path, 'wb') as f:
-            pickle.dump(extract_relevant(something), f)
+            pickle.dump(extractor(something), f)
         return True
 
 
