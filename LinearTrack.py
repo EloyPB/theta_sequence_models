@@ -35,6 +35,14 @@ class LinearTrack(SmartClass):
 
         self.pl_speed_profile(speed_profile_points)
 
+        # calculate mean lap duration
+        x = 0
+        steps = 0
+        while x < self.length:
+            x += self.speed_profile[int(x/self.ds)] * self.dt
+            steps += 1
+        self.mean_lap_duration = steps * self.dt
+
     def pl_speed_profile(self, points):
         """Define a speed profile as a piecewise linear function.
 
@@ -87,7 +95,7 @@ class LinearTrack(SmartClass):
 
     def run_laps(self, num_laps, interlap_t=0):
         # generate speed factor
-        duration = (num_laps + 1) * (interlap_t + self.length / np.mean(self.speed_profile))
+        duration = num_laps * (interlap_t + self.mean_lap_duration + self.dt)
         speed_factor = smoothed_noise(length=duration, ds=self.dt, sigma=self.speed_factor_sigma,
                                       amplitude=self.speed_factor_amplitude, mean=1)
         interlap_steps = int(interlap_t / self.dt)
@@ -125,7 +133,7 @@ class LinearTrack(SmartClass):
 
 if __name__ == "__main__":
     track = LinearTrack.current_instance()
-    track.run_laps(4, interlap_t=2)
-    track.run_laps(3, interlap_t=2)
+    track.run_laps(10, interlap_t=0)
+    # track.run_laps(3, interlap_t=2)
     track.plot_trajectory()
     plt.show()

@@ -4,6 +4,6 @@
   "dt": 0.002,
   "num_features": 128,
   "speed_profile_points": [[0, 15], [90, 80], [180, 15]],
-  "speed_factor_sigma": 3,
+  "speed_factor_sigma": 2,
   "speed_factor_amplitude": 1
 }
