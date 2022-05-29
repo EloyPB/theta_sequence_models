@@ -102,7 +102,7 @@ class SmartClass:
                 pickle.dump(results, f)
 
     @classmethod
-    def current_instance(cls, config: Config):
+    def current_instance(cls, config=Config()):
         return cls.possibly_old_instance(config) if config.pickle_instances else cls.new_instance(config)
 
     @classmethod
@@ -113,7 +113,7 @@ class SmartClass:
         for dependency in cls.dependencies:
             dependencies_dict[dependency.__name__] = dependency.new_instance(config)
 
-        return cls(config, dependencies_dict, **parameters_dict)
+        return cls(config=config, d=dependencies_dict, **parameters_dict)
 
     @classmethod
     def get_parameters(cls, config: Config):
@@ -197,7 +197,7 @@ class SmartClass:
                 # initialize new instance
                 if not parameters_dict:
                     print("Using default parameters...")
-                instance = cls(config, dependencies_dict, **parameters_dict)
+                instance = cls(config=config, d=dependencies_dict, **parameters_dict)
 
                 # dump instance and dependency time stamps
                 with open(instance_pickle_path, 'wb') as instance_f:
