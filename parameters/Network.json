@@ -1,0 +1,10 @@
+{
+  "num_units": 300,
+  "tau": 0.01,
+  "w_rec_sigma": 6,
+  "w_rec_exc": 0.16,
+  "w_rec_inh": 0.1,
+  "w_rec_shift": 1,
+  "sigmoid_gain": 6,
+  "sigmoid_midpoint": 0.5
+}

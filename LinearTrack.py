@@ -7,7 +7,7 @@ from generic.smart_class import Config, SmartClass
 
 class LinearTrack(SmartClass):
     def __init__(self, length, ds, dt, num_features, speed_profile_points, speed_factor_sigma=3,
-                 speed_factor_amplitude=1, config=Config(), d={}):
+                 speed_factor_amplitude=1, num_laps=0, interlap_t=0, config=Config(), d={}):
 
         SmartClass.__init__(self, config, d)
 
@@ -25,15 +25,16 @@ class LinearTrack(SmartClass):
         self.speed_factor_sigma = speed_factor_sigma
         self.speed_factor_amplitude = speed_factor_amplitude
 
-        self.speed_profile = np.zeros(self.num_bins)  # the typical running speed at each spatial bin
+        # the typical running speed at each spatial bi
+        self.speed_profile = self.pl_speed_profile(speed_profile_points)
 
         # lists to keep track of positions, speeds, speed factor and indices separating laps
         self.x_log = []
         self.speed_log = []
         self.speed_factor_log = []
-        self.lap_indices = []
+        self.lap_start_indices = []
 
-        self.pl_speed_profile(speed_profile_points)
+        self.interlap_steps = int(interlap_t / self.dt)
 
         # calculate mean lap duration
         x = 0
@@ -43,12 +44,15 @@ class LinearTrack(SmartClass):
             steps += 1
         self.mean_lap_duration = steps * self.dt
 
+        self.run_laps(num_laps)
+
     def pl_speed_profile(self, points):
         """Define a speed profile as a piecewise linear function.
 
         Args:
             points (tuple(tuple(float))): A tuple of (position, speed) pairs.
         """
+        speed_profile = np.zeros(self.num_bins)
         if len(points) < 2:
             sys.exit("at least two points are needed")
         for (x_l, s_l), (x_r, s_r) in zip(points[:-1], points[1:]):
@@ -56,7 +60,8 @@ class LinearTrack(SmartClass):
             x_r_index = min(self.num_bins - 1, int(x_r / self.ds))
             slope = (s_r - s_l) / (x_r - x_l)
             for x_index in range(x_l_index, x_r_index + 1):
-                self.speed_profile[x_index] = s_l + slope * ((x_index + 0.5) * self.ds - x_l)
+                speed_profile[x_index] = s_l + slope * ((x_index + 0.5) * self.ds - x_l)
+        return speed_profile
 
     def plot_speed_profile(self):
         fig, ax = plt.subplots()
@@ -93,30 +98,28 @@ class LinearTrack(SmartClass):
         ax.set_xlabel("Position (cm)")
         ax.set_ylabel("Feature #")
 
-    def run_laps(self, num_laps, interlap_t=0):
+    def run_laps(self, num_laps):
         # generate speed factor
-        duration = num_laps * (interlap_t + self.mean_lap_duration + self.dt)
+        duration = num_laps * (self.mean_lap_duration + self.dt)  # dt seems to be necessary because of some stochastic numerical error
         speed_factor = smoothed_noise(length=duration, ds=self.dt, sigma=self.speed_factor_sigma,
                                       amplitude=self.speed_factor_amplitude, mean=1)
-        interlap_steps = int(interlap_t / self.dt)
 
         i = 0
         for lap_num in range(num_laps):
             x = 0
-            self.lap_indices.append(len(self.x_log))
-            if interlap_steps:
-                self.x_log += [x for _ in range(interlap_steps)]
-                self.speed_log += [0 for _ in range(interlap_steps)]
-                i += interlap_steps
+            self.lap_start_indices.append(len(self.x_log))
+            if self.interlap_steps:
+                self.x_log += [x for _ in range(self.interlap_steps)]
+                self.speed_log += [0 for _ in range(self.interlap_steps)]
+                self.speed_factor_log += [np.nan for _ in range(self.interlap_steps)]
 
             while x < self.length:
                 speed = self.speed_profile[int(x / self.ds)] * speed_factor[i]
                 x += speed * self.dt
                 self.speed_log.append(speed)
                 self.x_log.append(x)
+                self.speed_factor_log.append(speed_factor[i])
                 i += 1
-
-        self.speed_factor_log += speed_factor[:i].tolist()
 
     def plot_trajectory(self):
         fig, ax = plt.subplots(3, sharex="col")
@@ -133,7 +136,7 @@ class LinearTrack(SmartClass):
 
 if __name__ == "__main__":
     track = LinearTrack.current_instance()
-    track.run_laps(10, interlap_t=0)
-    # track.run_laps(3, interlap_t=2)
+
+    print("plotting...")
     track.plot_trajectory()
     plt.show()
