@@ -17,23 +17,42 @@ def timer(func):
 
 
 if __name__ == "__main__":
-    N = 10000
+    N = 50000
     reps = 10
 
-    @timer
-    def rows():
-        for rep in range(reps):
-            a = np.empty((N, N))
-            for i in range(N):
-                a[i] = np.ones(N)
-            b = a.T
+    # @timer
+    # def rows():
+    #     for rep in range(reps):
+    #         a = np.empty((N, N))
+    #         for i in range(N):
+    #             a[i] = np.ones(N)
+    #         b = a.T
+    #
+    # @timer
+    # def cols():
+    #     for rep in range(reps):
+    #         a = np.empty((N, N))
+    #         for i in range(N):
+    #             a[:, i] = np.ones(N)
+
+    # rows()
+    # cols()
 
     @timer
-    def cols():
+    def extra():
         for rep in range(reps):
-            a = np.empty((N, N))
-            for i in range(N):
-                a[:, i] = np.ones(N)
+            m = np.empty((N, 200))
+            e = np.zeros(200)
+            for n in range(N):
+                e += 1
+                m[n] = e.copy()
 
-    rows()
-    cols()
+    @timer
+    def only_matrix():
+        for rep in range(reps):
+            m = np.empty((N, 200))
+            for n in range(1, N):
+                m[n] = m[n-1] + 1
+
+    extra()
+    only_matrix()

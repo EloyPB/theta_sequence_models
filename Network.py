@@ -1,26 +1,29 @@
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import colors
 from LinearTrack import LinearTrack
 from generic.smart_class import Config, SmartClass
+from generic.timer import timer
 
 
 class Network(SmartClass):
     dependencies = [LinearTrack]
 
     def __init__(self, num_units, tau, w_rec_sigma, w_rec_exc, w_rec_inh, w_rec_shift, sigmoid_gain, sigmoid_midpoint,
-                 theta_min, theta_max, theta_concentration, config=Config(), d={}):
+                 theta_min, theta_max, theta_concentration, base_f, tau_f, tau_d, log_dynamics=True,
+                 config=Config(), d={}):
 
         SmartClass.__init__(self, config, d)
 
         if 'LinearTrack' in d:
             self.track: LinearTrack = d['LinearTrack']
-            dt = self.track.dt
         else:
             sys.exit("A LinearTrack instance should be provided in d")
 
         self.num_units = num_units
-        self.dt_over_tau = dt / tau
+        self.tau = tau
+        self.dt_over_tau = self.track.dt / tau
 
         # initialize weights
         self.w_rec = np.empty((num_units, num_units))
@@ -37,6 +40,17 @@ class Network(SmartClass):
         self.theta_concentration_exp = np.exp(theta_concentration)
         self.theta_cycle_steps = 1 / (8 * self.track.dt)
 
+        self.base_f = base_f
+        self.tau_f = tau_f
+        self.tau_d = tau_d
+        self.depression = np.zeros(self.num_units)
+        self.facilitation = np.full(self.num_units, self.base_f)
+
+        self.log_dynamics = log_dynamics
+        if log_dynamics:
+            self.depression_log = np.empty((len(self.track.x_log), num_units))
+            self.facilitation_log = np.empty((len(self.track.x_log), num_units))
+
         self.act_log = np.empty((len(self.track.x_log), num_units))
         self.theta_log = np.empty(len(self.track.x_log))
 
@@ -49,7 +63,9 @@ class Network(SmartClass):
         ax.set_ylabel("Output unit number")
         plt.colorbar(mat, ax=ax)
 
+    @timer
     def run(self, reset_indices=(), reset_value=1):
+        self.act_log[-1] = 0
         for lap, lap_start_index in enumerate(self.track.lap_start_indices):
             # reset
             act = np.zeros(self.num_units)
@@ -63,10 +79,18 @@ class Network(SmartClass):
 
             for index in range(lap_start_index, last_lap_index):
                 act_out = self.f_act(act)
-                rec_input = self.w_rec @ act_out
+                ready = (1 - self.depression) * self.facilitation
+                rec_input = self.w_rec @ (act_out * ready)
                 self.theta_log[index] = self.theta(index)
-                act += (-act + rec_input + self.theta_log[index]) * self.dt_over_tau
+                act += (-act + rec_input + self.theta_log[index] + ready * 5) * self.dt_over_tau
                 self.act_log[index] = act.copy()
+
+                self.depression += (-self.depression + act_out) * self.track.dt / self.tau_d
+                self.facilitation += (-self.facilitation + self.base_f + (1 - self.facilitation)*act_out) * self.track.dt / self.tau_f
+
+                if self.log_dynamics:
+                    self.depression_log[index] = self.depression.copy()
+                    self.facilitation_log[index] = self.facilitation.copy()
 
     def theta(self, index):
         theta_phase = 2 * np.pi * (index % self.theta_cycle_steps) / self.theta_cycle_steps
@@ -105,3 +129,29 @@ class Network(SmartClass):
         axes[1, 1].set_visible(False)
 
         fig.tight_layout()
+
+    def plot_dynamics(self):
+        cyans = colors.LinearSegmentedColormap.from_list('cyans', [(0, 0, 0, 0), (1, 1, 1, 1)], N=100)
+        extent = (-self.track.dt/2, self.act_log.shape[0] * self.track.dt - self.track.dt / 2,
+                  -0.5, self.act_log.shape[1] - 0.5)
+
+        fig = plt.figure(constrained_layout=True)
+        spec = fig.add_gridspec(6, 2, height_ratios=[1, 1, 1, 1, 1, 1], width_ratios=[1, 0.03])
+
+        ax0 = fig.add_subplot(spec[0:2, 0])
+        mat0 = ax0.matshow(self.act_log.T, aspect="auto", origin="lower", extent=extent)
+        mat0b = ax0.matshow(self.depression_log.T, aspect="auto", origin="lower", extent=extent, cmap=cyans)
+        bar0 = plt.colorbar(mat0, cax=fig.add_subplot(spec[0, 1]))
+        bar0b = plt.colorbar(mat0b, cax=fig.add_subplot(spec[1, 1]))
+
+        ax1 = fig.add_subplot(spec[2:4, 0], sharex=ax0, sharey=ax0)
+        mat1 = ax1.matshow(self.act_log.T, aspect="auto", origin="lower", extent=extent)
+        mat1b = ax1.matshow(self.facilitation_log.T, aspect="auto", origin="lower", extent=extent, cmap=cyans)
+        bar1 = plt.colorbar(mat1, cax=fig.add_subplot(spec[2, 1]))
+        bar1b = plt.colorbar(mat1b, cax=fig.add_subplot(spec[3, 1]))
+
+        ax3 = fig.add_subplot(spec[4:6, 0], sharex=ax0, sharey=ax0)
+        mat3 = ax3.matshow(self.act_log.T, aspect="auto", origin="lower", extent=extent)
+        mat3b = ax3.matshow(((1-self.depression_log) * self.facilitation_log).T, aspect="auto", origin="lower", extent=extent, cmap=cyans)
+        bar3 = plt.colorbar(mat3, cax=fig.add_subplot(spec[4, 1]))
+        bar3b = plt.colorbar(mat3b, cax=fig.add_subplot(spec[5, 1]))

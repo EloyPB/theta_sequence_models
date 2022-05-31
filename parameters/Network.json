@@ -1,13 +1,16 @@
 {
   "num_units": 300,
   "tau": 0.01,
-  "w_rec_sigma": 6,
-  "w_rec_exc": 0.16,
-  "w_rec_inh": 0.1,
-  "w_rec_shift": 1,
+  "w_rec_sigma": 5,
+  "w_rec_exc": 0.5,
+  "w_rec_inh": 0.3,
+  "w_rec_shift": 1.5,
   "sigmoid_gain": 6,
   "sigmoid_midpoint": 0.5,
-  "theta_min": -1.2,
-  "theta_max": 0.8,
-  "theta_concentration": 8
+  "theta_min": -1,
+  "theta_max": 0,
+  "theta_concentration": 8,
+  "base_f": 0.2,
+  "tau_f": 0.15,
+  "tau_d": 0.05
 }
