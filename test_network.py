@@ -1,7 +1,7 @@
 from Network import Network, Config, plt
 
 config = Config(variants={'LinearTrack': 'OneLap',
-                          # 'Network': 'SimpleF'
+                          'Network': 'SimpleF'
                           })
 network = Network.current_instance(config)
 

@@ -93,8 +93,8 @@ class Network(SmartClass):
                 self.act_log[index] = act.copy()
 
                 self.depression += (-self.depression + act_out) * self.track.dt / self.tau_d
-                self.facilitation += (-self.facilitation + self.base_f + (1 - self.facilitation)*act_out) * self.track.dt / self.tau_f
-                # self.facilitation += (-self.facilitation + self.base_f + act_out) * self.track.dt / self.tau_f
+                # self.facilitation += (-self.facilitation + self.base_f + (1 - self.facilitation)*act_out) * self.track.dt / self.tau_f
+                self.facilitation += (-self.facilitation + self.base_f + act_out) * self.track.dt / self.tau_f
                 if self.log_dynamics:
                     self.depression_log[index] = self.depression.copy()
                     self.facilitation_log[index] = self.facilitation.copy()

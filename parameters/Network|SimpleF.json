@@ -1,5 +1,5 @@
 {
-  "num_units": 300,
+  "num_units": 200,
   "tau": 0.01,
   "w_rec_sigma": 5,
   "w_rec_exc": 0.3,
