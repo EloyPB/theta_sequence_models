@@ -8,7 +8,8 @@ network = Network.current_instance(config)
 # network.plot_rec_weights()
 
 network.run(reset_indices=(0, 10), reset_value=2)
-# network.plot_activities(apply_f=1)
-network.plot_dynamics()
+network.plot_activities(apply_f=0)
+network.plot_activities(apply_f=1)
+# network.plot_dynamics()
 
 plt.show()

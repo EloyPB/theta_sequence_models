@@ -82,7 +82,7 @@ class Network(SmartClass):
                 ready = (1 - self.depression) * self.facilitation
                 rec_input = self.w_rec @ (act_out * ready)
                 self.theta_log[index] = self.theta(index)
-                act += (-act + rec_input + self.theta_log[index] + ready * 5) * self.dt_over_tau
+                act += (-act + rec_input + self.theta_log[index] + ready * 3) * self.dt_over_tau
                 self.act_log[index] = act.copy()
 
                 self.depression += (-self.depression + act_out) * self.track.dt / self.tau_d
