@@ -11,7 +11,7 @@ class Network(SmartClass):
     dependencies = [LinearTrack]
 
     def __init__(self, num_units, tau, w_rec_sigma, w_rec_exc, w_rec_inh, w_rec_shift, sigmoid_gain, sigmoid_midpoint,
-                 theta_min, theta_max, theta_concentration, base_f, tau_f, tau_d, log_dynamics=True,
+                 theta_min, theta_max, theta_concentration, base_f, tau_f, tau_d, global_input, log_dynamics=True,
                  config=Config(), d={}):
 
         SmartClass.__init__(self, config, d)
@@ -46,6 +46,8 @@ class Network(SmartClass):
         self.depression = np.zeros(self.num_units)
         self.facilitation = np.full(self.num_units, self.base_f)
 
+        self.global_input = global_input
+
         self.log_dynamics = log_dynamics
         if log_dynamics:
             self.depression_log = np.empty((len(self.track.x_log), num_units))
@@ -63,14 +65,13 @@ class Network(SmartClass):
         ax.set_ylabel("Output unit number")
         plt.colorbar(mat, ax=ax)
 
-    @timer
     def run(self, reset_indices=(), reset_value=1):
         self.act_log[-1] = 0
         for lap, lap_start_index in enumerate(self.track.lap_start_indices):
-            # reset
+            # reset activity and internal dynamics
             act = np.zeros(self.num_units)
-            if reset_indices:
-                act[slice(reset_indices[0], reset_indices[1])] = reset_value
+            self.depression = np.zeros(self.num_units)
+            self.facilitation = np.full(self.num_units, self.base_f)
 
             if lap + 1 < len(self.track.lap_start_indices):
                 last_lap_index = self.track.lap_start_indices[lap + 1]
@@ -78,16 +79,22 @@ class Network(SmartClass):
                 last_lap_index = len(self.track.x_log)
 
             for index in range(lap_start_index, last_lap_index):
+                if reset_indices and index - lap_start_index < 10:
+                    clamp = np.zeros(self.num_units)
+                    clamp[slice(reset_indices[0], reset_indices[1])] = reset_value
+                else:
+                    clamp = 0
+
                 act_out = self.f_act(act)
                 ready = (1 - self.depression) * self.facilitation
                 rec_input = self.w_rec @ (act_out * ready)
                 self.theta_log[index] = self.theta(index)
-                act += (-act + rec_input + self.theta_log[index] + ready * 3) * self.dt_over_tau
+                act += (-act + rec_input + self.theta_log[index] + ready * self.global_input + clamp) * self.dt_over_tau
                 self.act_log[index] = act.copy()
 
                 self.depression += (-self.depression + act_out) * self.track.dt / self.tau_d
                 self.facilitation += (-self.facilitation + self.base_f + (1 - self.facilitation)*act_out) * self.track.dt / self.tau_f
-
+                # self.facilitation += (-self.facilitation + self.base_f + act_out) * self.track.dt / self.tau_f
                 if self.log_dynamics:
                     self.depression_log[index] = self.depression.copy()
                     self.facilitation_log[index] = self.facilitation.copy()

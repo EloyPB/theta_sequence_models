@@ -2,8 +2,8 @@
   "num_units": 300,
   "tau": 0.01,
   "w_rec_sigma": 5,
-  "w_rec_exc": 0.5,
-  "w_rec_inh": 0.35,
+  "w_rec_exc": 0.3,
+  "w_rec_inh": 0.4,
   "w_rec_shift": 1.2,
   "sigmoid_gain": 6,
   "sigmoid_midpoint": 0.5,
@@ -12,5 +12,7 @@
   "theta_concentration": 8,
   "base_f": 0.2,
   "tau_f": 0.12,
-  "tau_d": 0.05
+  "tau_d": 0.06,
+  "global_input": 3.5,
+  "log_dynamics": 1
 }
