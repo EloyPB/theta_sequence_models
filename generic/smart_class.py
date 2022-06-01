@@ -10,12 +10,13 @@ class Config:
     """Helper class that bundles together parameters used by SmartClass
 
     Args:
+        identifier (str): Optional ID.
         variants (dict): Keys are class names and values are parameter tags.
         save_figures (bool): Whether to save and close the figures.
-        figure_format (string): Format of the figures (e.g., png).
-        figures_root_path (string): Path to the figures' folder.
+        figure_format (str): Format of the figures (e.g., png).
+        figures_root_path (str): Path to the figures' folder.
         pickle_results (bool): Whether to pickle the results.
-        pickles_root_path (string): Path to the folder where results will be pickled.
+        pickles_root_path (str): Path to the folder where results will be pickled.
     """
     def __init__(self, identifier=None, variants={}, parameters_path="parameters", save_figures=False,
                  figure_format="png", figures_root_path="figures", pickle_instances=False, pickle_results=False,
@@ -71,8 +72,8 @@ class SmartClass:
 
         Args:
             fig (matplotlib.pyplot.figure): Figure to save.
-            name (string): Name for the file.
-            sub_folder (string): Name for the sub-folder.
+            name (str): Name for the file.
+            sub_folder (str): Name for the sub-folder.
             dpi (int): Dots per inch.
         """
         if self.config.save_figures:
@@ -93,8 +94,8 @@ class SmartClass:
 
         Args:
             results: Python object to be pickled.
-            name (string): Name for the file.
-            sub_folder (string): Name for the sub-folder.
+            name (str): Name for the file.
+            sub_folder (str): Name for the sub-folder.
         """
         if self.config.pickle_results:
             file_path = self.file_path(self.pickles_path, name, sub_folder)
@@ -224,9 +225,9 @@ class SmartClass:
         is no match, a new pickle is created.
 
         Args:
-            path (string): Path where pickles will be stored.
-            something (object): Function, class, built-in type, etc. to compare.
-            extractor (function): A function that extracts the relevant part to be compared.
+            path (str): Path where pickles will be stored.
+            something: Function, class, built-in type, etc. to compare.
+            extractor: A function that extracts the relevant part to be compared.
         Returns:
             (bool): Whether the source code matched that of a previous pickled version.
         """
@@ -265,10 +266,8 @@ if __name__ == "__main__":
             SmartClass.__init__(self, config, d)
             self.b = b
 
-    my_config = Config(identifier=1, variants={'A': 'Special', 'B': 'Cool'}, pickle_instances=True,
+    my_config = Config(identifier='1', variants={'A': 'Special', 'B': 'Cool'}, pickle_instances=True,
                        parameters_path="parameters")
     my_b = B.current_instance(my_config)
-
-    print(my_b.b)
 
     # remove_older_than(0, "pickles")
