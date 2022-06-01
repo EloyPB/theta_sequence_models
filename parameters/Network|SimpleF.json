@@ -5,8 +5,8 @@
   "w_rec_exc": 0.3,
   "w_rec_inh": 0.9,
   "w_rec_shift": 1.2,
-  "sigmoid_gain": 6,
-  "sigmoid_midpoint": 0.5,
+  "act_sigmoid_gain": 6,
+  "act_sigmoid_midpoint": 0.5,
   "theta_min": -1.6,
   "theta_max": 0.0,
   "theta_concentration": 8,
@@ -14,5 +14,8 @@
   "tau_f": 0.17,
   "tau_d": 0.06,
   "global_input": 2.5,
+  "pos_factor": 0.4,
+  "pos_sigmoid_gain": 12,
+  "pos_sigmoid_midpoint": 0.7,
   "log_dynamics": 1
 }

@@ -10,9 +10,9 @@ from generic.timer import timer
 class Network(SmartClass):
     dependencies = [LinearTrack]
 
-    def __init__(self, num_units, tau, w_rec_sigma, w_rec_exc, w_rec_inh, w_rec_shift, sigmoid_gain, sigmoid_midpoint,
-                 theta_min, theta_max, theta_concentration, base_f, tau_f, tau_d, global_input, log_dynamics=True,
-                 config=Config(), d={}):
+    def __init__(self, num_units, tau, w_rec_sigma, w_rec_exc, w_rec_inh, w_rec_shift, act_sigmoid_gain,
+                 act_sigmoid_midpoint, theta_min, theta_max, theta_concentration, base_f, tau_f, tau_d, global_input,
+                 pos_factor, pos_sigmoid_gain, pos_sigmoid_midpoint, log_dynamics=True, config=Config(), d={}):
 
         SmartClass.__init__(self, config, d)
 
@@ -25,15 +25,15 @@ class Network(SmartClass):
         self.tau = tau
         self.dt_over_tau = self.track.dt / tau
 
-        # initialize weights
+        # initialize recurrent weights
         self.w_rec = np.empty((num_units, num_units))
         two_sigma_squared = 2 * w_rec_sigma**2
         n = np.arange(self.num_units)
         self.w_rec = np.exp(-(n.reshape(-1, 1) - n - w_rec_shift) ** 2 / two_sigma_squared)
         self.w_rec = self.w_rec * (w_rec_exc + w_rec_inh) - w_rec_inh
 
-        self.sigmoid_gain = sigmoid_gain
-        self.sigmoid_midpoint = sigmoid_midpoint
+        self.act_sigmoid_gain = act_sigmoid_gain
+        self.act_sigmoid_midpoint = act_sigmoid_midpoint
         self.theta_max = theta_max
         self.theta_amplitude = theta_max - theta_min
         self.theta_concentration = theta_concentration
@@ -47,6 +47,11 @@ class Network(SmartClass):
         self.facilitation = np.full(self.num_units, self.base_f)
 
         self.global_input = global_input
+
+        self.pos_factor = pos_factor
+        self.pos_sigmoid_gain = pos_sigmoid_gain
+        self.pos_sigmoid_midpoint = pos_sigmoid_midpoint
+        self.w_pos = np.zeros((self.num_units, self.track.num_features))
 
         self.log_dynamics = log_dynamics
         if log_dynamics:
@@ -88,7 +93,11 @@ class Network(SmartClass):
                 act_out = self.f_act(act)
                 ready = (1 - self.depression) * self.facilitation
                 rec_input = self.w_rec @ (act_out * ready)
+                pos_input = self.f_pos(self.w_pos @ self.track.features[int(self.track.x_log[index] / self.track.ds)])
+
                 self.theta_log[index] = self.theta(index)
+
+                # act += (-act + clamp + self.theta_log[index] + ready * (rec_input + pos_input + self.global_input)) * self.dt_over_tau
                 act += (-act + rec_input + self.theta_log[index] + ready * self.global_input + clamp) * self.dt_over_tau
                 self.act_log[index] = act.copy()
 
@@ -105,7 +114,10 @@ class Network(SmartClass):
                 * self.theta_amplitude + self.theta_max)
 
     def f_act(self, x):
-        return 1 / (1 + np.exp(-self.sigmoid_gain * (x - self.sigmoid_midpoint)))
+        return 1 / (1 + np.exp(-self.act_sigmoid_gain * (x - self.act_sigmoid_midpoint)))
+
+    def f_pos(self, x):
+        return 1 / (1 + np.exp(-self.pos_sigmoid_gain * (x - self.pos_sigmoid_midpoint)))
 
     def plot_activities(self, t_start=0, t_end=None, apply_f=False):
         index_start = int(t_start / self.track.dt)

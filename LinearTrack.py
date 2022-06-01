@@ -6,7 +6,7 @@ from generic.smart_class import Config, SmartClass
 
 
 class LinearTrack(SmartClass):
-    def __init__(self, length, ds, dt, num_features, speed_profile_points, speed_factor_sigma=3,
+    def __init__(self, length, ds, dt, num_features, features_sigma_range, speed_profile_points, speed_factor_sigma=3,
                  speed_factor_amplitude=1, num_laps=0, interlap_t=0, config=Config(), d={}):
 
         SmartClass.__init__(self, config, d)
@@ -20,7 +20,7 @@ class LinearTrack(SmartClass):
         self.dt = dt  # temporal bin size
 
         self.num_features = num_features
-        self.features = []
+        self.features = self.random_features(features_sigma_range)
 
         self.speed_factor_sigma = speed_factor_sigma
         self.speed_factor_amplitude = speed_factor_amplitude
@@ -34,8 +34,6 @@ class LinearTrack(SmartClass):
         self.speed_factor_log = []
         self.lap_start_indices = []
 
-        self.interlap_steps = int(interlap_t / self.dt)
-
         # calculate mean lap duration
         x = 0
         steps = 0
@@ -44,6 +42,7 @@ class LinearTrack(SmartClass):
             steps += 1
         self.mean_lap_duration = steps * self.dt
 
+        self.interlap_steps = int(interlap_t / self.dt)
         self.run_laps(num_laps)
 
     def pl_speed_profile(self, points):
@@ -70,19 +69,19 @@ class LinearTrack(SmartClass):
         ax.set_xlabel("Position (cm)")
         ax.set_ylabel("Speed (cm/s)")
 
-    def random_features(self, sigma_range, tanh_gain=3, amplitude=2, offset=0):
-        for sigma in np.random.uniform(sigma_range[0], sigma_range[1], self.num_features):
-            features = np.tanh(tanh_gain * smoothed_noise(self.length, self.ds, sigma)) * amplitude/2 + offset
-            self.features.append(features)
-        self.features = np.array(self.features)
+    def random_features(self, sigma_range, amplitude=2, offset=0):
+        features = np.empty((self.num_bins, self.num_features))
+        for feature_num, sigma in enumerate(np.random.uniform(sigma_range[0], sigma_range[1], self.num_features)):
+            feature = smoothed_noise(self.length, self.ds, sigma, amplitude, offset)
+            features[:, feature_num] = feature
 
-        # sort by peak position
-        self.features = self.features[np.argsort(np.argmax(self.features, axis=1))]
+        # return features sorted by peak position
+        return features[:, np.argsort(np.argmax(features, axis=0))]
 
     def plot_features(self, features_per_col=12, num_cols=3):
         features_per_plot = features_per_col * num_cols
         x = np.arange(self.ds/2, self.length, self.ds)
-        for feature_num, feature in enumerate(self.features):
+        for feature_num, feature in enumerate(self.features.T):
             figure_plot_num = feature_num % features_per_plot
             if figure_plot_num == 0:
                 fig, ax = plt.subplots(features_per_col, num_cols, sharex="all", sharey="all", figsize=(5, 9))
@@ -92,7 +91,7 @@ class LinearTrack(SmartClass):
 
     def plot_features_heatmap(self):
         fig, ax = plt.subplots()
-        ax.matshow(self.features, aspect='auto', origin='lower',
+        ax.matshow(self.features.T, aspect='auto', origin='lower',
                    extent=(0, self.num_bins*self.ds, -0.5, self.num_features - 0.5))
         ax.xaxis.set_ticks_position('bottom')
         ax.set_xlabel("Position (cm)")
@@ -113,9 +112,11 @@ class LinearTrack(SmartClass):
                 self.speed_log += [0 for _ in range(self.interlap_steps)]
                 self.speed_factor_log += [np.nan for _ in range(self.interlap_steps)]
 
-            while x < self.length:
+            while True:
                 speed = self.speed_profile[int(x / self.ds)] * speed_factor[i]
                 x += speed * self.dt
+                if x >= self.length:
+                    break
                 self.speed_log.append(speed)
                 self.x_log.append(x)
                 self.speed_factor_log.append(speed_factor[i])
