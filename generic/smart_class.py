@@ -125,13 +125,13 @@ class SmartClass:
             with open(parameters_path) as parameters_f:
                 parameters_dict = json.load(parameters_f)
 
-            # try to update default parameters based on specified variant
-            if cls.__name__ in config.variants:
-                parameters_path = f"{config.parameters_path}/{cls.__name__}|{config.variants[cls.__name__]}.json"
-                if os.path.exists(parameters_path):
-                    with open(parameters_path) as parameters_f:
-                        special_parameters_dict = json.load(parameters_f)
-                        parameters_dict = {**parameters_dict, **special_parameters_dict}
+        # try to update default parameters based on specified variant
+        if cls.__name__ in config.variants:
+            parameters_path = f"{config.parameters_path}/{cls.__name__}|{config.variants[cls.__name__]}.json"
+            if os.path.exists(parameters_path):
+                with open(parameters_path) as parameters_f:
+                    special_parameters_dict = json.load(parameters_f)
+                    parameters_dict = {**parameters_dict, **special_parameters_dict}
 
         return parameters_dict
 
