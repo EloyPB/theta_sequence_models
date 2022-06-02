@@ -13,9 +13,9 @@
   "base_f": 0.14,
   "tau_f": 0.32,
   "tau_d": 0.06,
-  "global_input": 0,
-  "pos_factor": 0.4,
+  "pos_factor": 0,
   "pos_sigmoid_gain": 12,
   "pos_sigmoid_midpoint": 0.7,
-  "log_dynamics": 1
+  "log_dynamics": 0,
+  "log_pos_input": 0
 }

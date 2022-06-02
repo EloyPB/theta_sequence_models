@@ -100,8 +100,11 @@ class LinearTrack(SmartClass):
     def run_laps(self, num_laps):
         # generate speed factor
         duration = num_laps * (self.mean_lap_duration + self.dt)  # dt seems to be necessary because of some stochastic numerical error
-        speed_factor = smoothed_noise(length=duration, ds=self.dt, sigma=self.speed_factor_sigma,
-                                      amplitude=self.speed_factor_amplitude, mean=1)
+        if self.speed_factor_sigma:
+            speed_factor = smoothed_noise(length=duration, ds=self.dt, sigma=self.speed_factor_sigma,
+                                          amplitude=self.speed_factor_amplitude, mean=1)
+        else:
+            speed_factor = np.ones(int(duration / self.dt))
 
         i = 0
         for lap_num in range(num_laps):

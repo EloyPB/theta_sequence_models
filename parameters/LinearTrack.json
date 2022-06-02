@@ -8,5 +8,5 @@
   "speed_factor_sigma": 2,
   "speed_factor_amplitude": 1,
   "num_laps": 10,
-  "interlap_t": 1
+  "interlap_t": 0
 }
