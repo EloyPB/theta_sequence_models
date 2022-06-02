@@ -94,32 +94,14 @@ class Network(SmartClass):
                 ready = (1 - self.depression) * self.facilitation
                 pos_input = self.f_pos(self.w_pos @ self.track.features[int(self.track.x_log[index] / self.track.ds)])
                 self.theta_log[index] = self.theta(index)
-                # if self.theta_log[index] < -1.9:
-                #     act = np.zeros(self.num_units)
 
-                # # post-synaptic facilitation/depression (works with simpler facilitation eq)
-                # rec_input = self.w_rec @ act_out
-                # act += ((-act + clamp + self.theta_log[index] + ready * (rec_input + pos_input + self.global_input))
-                #         * self.dt_over_tau)
-
-                # # pre-synaptic facilitation/depression for rec_input, but post-synaptic for global_input
-                # rec_input = self.w_rec @ (act_out * ready)
-                # act += (-act + rec_input + self.theta_log[index] + ready * self.global_input + clamp) * self.dt_over_tau
-
-                # pre-synaptic facilitation/depression only
                 rec_input = self.w_rec @ (act_out * ready)
                 act += (-act + clamp + self.theta_log[index] + self.global_input + rec_input + pos_input) * self.dt_over_tau
-
                 self.act_log[index] = act.copy()
 
-                # my simplifications
                 self.depression += (-self.depression + act_out) * self.track.dt / self.tau_d
                 self.facilitation += (-self.facilitation + self.base_f + (1 - self.facilitation)*act_out) * self.track.dt / self.tau_f
                 # self.facilitation += (-self.facilitation + self.base_f + act_out) * self.track.dt / self.tau_f  # simpler
-
-                # # original romani/tsodyks model
-                # self.depression += (-self.depression/self.tau_d + self.facilitation*(1-self.depression)*act_out) * self.track.dt
-                # self.facilitation += ((self.base_f - self.facilitation)/self.tau_f + self.base_f*(1-self.facilitation)*act_out) * self.track.dt
 
                 if self.log_dynamics:
                     self.depression_log[index] = self.depression.copy()
