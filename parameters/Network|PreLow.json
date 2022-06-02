@@ -1,0 +1,21 @@
+{
+  "num_units": 200,
+  "tau": 0.005,
+  "w_rec_sigma": 5,
+  "w_rec_exc": 0.4,
+  "w_rec_inh": 2.5,
+  "w_rec_shift": 0.5,
+  "act_sigmoid_gain": 6,
+  "act_sigmoid_midpoint": 0.5,
+  "theta_min": -1.2,
+  "theta_max": 1.3,
+  "theta_concentration": 12,
+  "base_f": 0.14,
+  "tau_f": 0.28,
+  "tau_d": 0.06,
+  "global_input": 0,
+  "pos_factor": 0.4,
+  "pos_sigmoid_gain": 12,
+  "pos_sigmoid_midpoint": 0.7,
+  "log_dynamics": 1
+}

@@ -94,6 +94,8 @@ class Network(SmartClass):
                 ready = (1 - self.depression) * self.facilitation
                 pos_input = self.f_pos(self.w_pos @ self.track.features[int(self.track.x_log[index] / self.track.ds)])
                 self.theta_log[index] = self.theta(index)
+                # if self.theta_log[index] < -1.9:
+                #     act = np.zeros(self.num_units)
 
                 # # post-synaptic facilitation/depression (works with simpler facilitation eq)
                 # rec_input = self.w_rec @ act_out
@@ -112,8 +114,8 @@ class Network(SmartClass):
 
                 # my simplifications
                 self.depression += (-self.depression + act_out) * self.track.dt / self.tau_d
-                # self.facilitation += (-self.facilitation + self.base_f + (1 - self.facilitation)*act_out) * self.track.dt / self.tau_f
-                self.facilitation += (-self.facilitation + self.base_f + act_out) * self.track.dt / self.tau_f  # simpler
+                self.facilitation += (-self.facilitation + self.base_f + (1 - self.facilitation)*act_out) * self.track.dt / self.tau_f
+                # self.facilitation += (-self.facilitation + self.base_f + act_out) * self.track.dt / self.tau_f  # simpler
 
                 # # original romani/tsodyks model
                 # self.depression += (-self.depression/self.tau_d + self.facilitation*(1-self.depression)*act_out) * self.track.dt
@@ -164,28 +166,49 @@ class Network(SmartClass):
 
         fig.tight_layout()
 
-    def plot_dynamics(self):
+    def plot_dynamics(self, t_start=0, t_end=None):
+        index_start = int(t_start / self.track.dt)
+        index_end = int(t_end / self.track.dt) if t_end is not None else len(self.act_log)
+
+        act_log = np.array(self.act_log[index_start:index_end]).T
+
         cyans = colors.LinearSegmentedColormap.from_list('cyans', [(0, 0, 0, 0), (1, 1, 1, 1)], N=100)
-        extent = (-self.track.dt/2, self.act_log.shape[0] * self.track.dt - self.track.dt / 2,
-                  -0.5, self.act_log.shape[1] - 0.5)
+        extent = (index_start * self.track.dt - self.track.dt / 2, index_end * self.track.dt + self.track.dt / 2,
+                  -0.5, act_log.shape[0] - 0.5)
 
         fig = plt.figure(constrained_layout=True)
         spec = fig.add_gridspec(6, 2, height_ratios=[1, 1, 1, 1, 1, 1], width_ratios=[1, 0.03])
 
         ax0 = fig.add_subplot(spec[0:2, 0])
-        mat0 = ax0.matshow(self.act_log.T, aspect="auto", origin="lower", extent=extent)
-        mat0b = ax0.matshow(self.depression_log.T, aspect="auto", origin="lower", extent=extent, cmap=cyans)
+        mat0 = ax0.matshow(act_log, aspect="auto", origin="lower", extent=extent)
+        mat0b = ax0.matshow(self.depression_log[index_start:index_end].T, aspect="auto", origin="lower",
+                            extent=extent, cmap=cyans)
         bar0 = plt.colorbar(mat0, cax=fig.add_subplot(spec[0, 1]))
         bar0b = plt.colorbar(mat0b, cax=fig.add_subplot(spec[1, 1]))
+        bar0b.set_label("D")
 
         ax1 = fig.add_subplot(spec[2:4, 0], sharex=ax0, sharey=ax0)
-        mat1 = ax1.matshow(self.act_log.T, aspect="auto", origin="lower", extent=extent)
-        mat1b = ax1.matshow(self.facilitation_log.T, aspect="auto", origin="lower", extent=extent, cmap=cyans)
+        mat1 = ax1.matshow(act_log, aspect="auto", origin="lower", extent=extent)
+        mat1b = ax1.matshow(self.facilitation_log[index_start:index_end].T, aspect="auto", origin="lower",
+                            extent=extent, cmap=cyans)
         bar1 = plt.colorbar(mat1, cax=fig.add_subplot(spec[2, 1]))
         bar1b = plt.colorbar(mat1b, cax=fig.add_subplot(spec[3, 1]))
+        bar1b.set_label("F")
 
-        ax3 = fig.add_subplot(spec[4:6, 0], sharex=ax0, sharey=ax0)
-        mat3 = ax3.matshow(self.act_log.T, aspect="auto", origin="lower", extent=extent)
-        mat3b = ax3.matshow(((1-self.depression_log) * self.facilitation_log).T, aspect="auto", origin="lower", extent=extent, cmap=cyans)
-        bar3 = plt.colorbar(mat3, cax=fig.add_subplot(spec[4, 1]))
-        bar3b = plt.colorbar(mat3b, cax=fig.add_subplot(spec[5, 1]))
+        ax2 = fig.add_subplot(spec[4:6, 0], sharex=ax0, sharey=ax0)
+        mat2 = ax2.matshow(act_log, aspect="auto", origin="lower", extent=extent)
+        mat2b = ax2.matshow(((1-self.depression_log[index_start:index_end])
+                             * self.facilitation_log[index_start:index_end]).T,
+                            aspect="auto", origin="lower", extent=extent, cmap=cyans)
+        bar3 = plt.colorbar(mat2, cax=fig.add_subplot(spec[4, 1]))
+        bar3b = plt.colorbar(mat2b, cax=fig.add_subplot(spec[5, 1]))
+        bar3b.set_label("(1-D) F")
+
+        ax0.set_ylabel("Unit #")
+        ax0.xaxis.set_ticks_position('bottom')
+        ax1.set_ylabel("Unit #")
+        ax1.xaxis.set_ticks_position('bottom')
+        ax2.set_ylabel("Unit #")
+        ax2.set_xlabel("Time (s)")
+        ax2.xaxis.set_ticks_position('bottom')
+
