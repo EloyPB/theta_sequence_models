@@ -292,7 +292,8 @@ if __name__ == "__main__":
     
     You can also define alternative configurations that use different parameters by adding other json files named
     X|Y.json where Y is the name of the alternative configuration. Then specify which configurations you are using in 
-    the variants argument of Config:
+    the 'variants' argument of Config. Alternative configurations only need to specify those parameters that change; for
+    the rest of parameters it will use the default ones. 
     """
 
     variants = {'A': 'Bigger'}  # you can specify an alternative configuration for each class
