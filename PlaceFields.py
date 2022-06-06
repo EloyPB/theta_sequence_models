@@ -13,7 +13,7 @@ class PlaceFields(SmartClass):
                  config=Config(), d={}):
         SmartClass.__init__(self, config, d)
 
-        self.network = d['Network']
+        self.network: Network = d['Network']
         self.track: LinearTrack = self.network.d['LinearTrack']
         self.track.compute_mean_speeds(bin_size)
 

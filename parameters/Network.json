@@ -22,6 +22,7 @@
   "reset_value": 1,
   "learning_rate": 0.00005,
   "log_act": 0,
+  "log_theta": 0,
   "log_dynamics": 0,
   "log_pos_input": 0
 }

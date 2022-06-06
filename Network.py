@@ -14,8 +14,8 @@ class Network(SmartClass):
     def __init__(self, num_units, tau, w_rec_sigma, w_rec_exc, w_rec_inh, w_rec_shift, act_sigmoid_gain,
                  act_sigmoid_midpoint, theta_min, theta_max, theta_concentration, base_f, tau_f, tau_d, pos_factor_0,
                  pos_factor_concentration, pos_factor_phase, pos_sigmoid_gain, pos_sigmoid_midpoint, reset_indices,
-                 reset_value, learning_rate, log_act=False, log_pos_input=False, log_dynamics=False, config=Config(),
-                 d={}):
+                 reset_value, learning_rate, log_act=False, log_theta=False, log_pos_input=False, log_dynamics=False,
+                 config=Config(), d={}):
 
         SmartClass.__init__(self, config, d)
 
@@ -38,9 +38,8 @@ class Network(SmartClass):
         self.act_sigmoid_gain = act_sigmoid_gain
         self.act_sigmoid_midpoint = act_sigmoid_midpoint
         self.theta_max = theta_max
-        self.theta_amplitude = theta_max - theta_min
         self.theta_concentration = theta_concentration
-        self.theta_concentration_exp = np.exp(theta_concentration)
+        self.theta_multiplier = (theta_max - theta_min) / np.exp(theta_concentration)
         self.theta_cycle_steps = 1 / (8 * self.track.dt)
 
         self.base_f = base_f
@@ -68,7 +67,11 @@ class Network(SmartClass):
         if log_act:
             self.act_log = np.empty((len(self.track.x_log), num_units))
         self.act_out_log = np.empty((len(self.track.x_log), num_units))
-        self.theta_log = np.empty(len(self.track.x_log))
+
+        self.log_theta = log_theta
+        if log_theta:
+            self.theta_log = np.empty(len(self.track.x_log))
+        self.theta_phase_log = np.empty(len(self.track.x_log))
 
         self.run(reset_indices, reset_value, learning_rate)
 
@@ -99,9 +102,12 @@ class Network(SmartClass):
                 last_lap_index = len(self.track.x_log)
 
             for index in range(lap_start_index, last_lap_index):
-                theta_phase, self.theta_log[index] = self.theta(index)
+                theta = self.theta(index)
+                if self.log_theta:
+                    self.theta_log[index] = theta
 
-                pos_factor = (np.exp(self.pos_factor_concentration * np.cos(theta_phase - self.pos_factor_phase))
+                pos_factor = (np.exp(self.pos_factor_concentration
+                                     * np.cos(self.theta_phase_log[index] - self.pos_factor_phase))
                               / exp_concentration)
                 features = self.track.features[int(self.track.x_log[index] / self.track.ds)]
                 pos_input = self.f_pos(self.w_pos @ features) * pos_factor
@@ -118,7 +124,7 @@ class Network(SmartClass):
                 act_out = self.act_out_log[index]
                 ready = (1 - self.depression) * self.facilitation
                 rec_input = self.w_rec @ (act_out * ready)
-                act += (-act + clamp + self.theta_log[index] + rec_input + self.pos_factor_0 * pos_input) * self.dt_over_tau
+                act += (-act + clamp + theta + rec_input + self.pos_factor_0 * pos_input) * self.dt_over_tau
                 if self.log_act:
                     self.act_log[index] = act.copy()
 
@@ -134,10 +140,9 @@ class Network(SmartClass):
                     self.w_pos += learning_rate * pos_factor * (act_out * (act_out - pos_input))[np.newaxis].T * features
 
     def theta(self, index):
-        theta_phase = 2 * np.pi * (index % self.theta_cycle_steps) / self.theta_cycle_steps
-        theta = (-np.exp(self.theta_concentration * np.cos(theta_phase)) / self.theta_concentration_exp
-                 * self.theta_amplitude + self.theta_max)
-        return theta_phase, theta
+        self.theta_phase_log[index] = 2 * np.pi * (index % self.theta_cycle_steps) / self.theta_cycle_steps
+        return (-np.exp(self.theta_concentration * np.cos(self.theta_phase_log[index]))
+                * self.theta_multiplier + self.theta_max)
 
     def f_act(self, x):
         return 1 / (1 + np.exp(-self.act_sigmoid_gain * (x - self.act_sigmoid_midpoint)))
@@ -252,6 +257,6 @@ if __name__ == "__main__":
     # network.plot_rec_weights()
     # network.plot_activities(apply_f=0)
     # network.plot_dynamics(t_end=None)
-    network.plot_activities(apply_f=1, pos_input=1, theta=0, t_start=0)
+    network.plot_activities(apply_f=1, pos_input=1, theta=1, t_start=0)
 
     plt.show()

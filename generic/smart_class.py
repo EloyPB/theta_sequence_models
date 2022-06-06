@@ -10,11 +10,12 @@ class Config:
     """Helper class that bundles together parameters used by SmartClass
 
     Args:
-        identifier (str): Optional ID.
-        variants (dict): Keys are class names and values are parameter tags.
+        identifier (str): Optional ID that will be prepended to the name of folders saving pickles and results.
+        variants (dict): Keys are class names and values are alternative configuration names.
         save_figures (bool): Whether to save and close the figures.
         figure_format (str): Format of the figures (e.g., png).
         figures_root_path (str): Path to the figures' folder.
+        pickle_instances (bool): Whether to pickle initialized instances.
         pickle_results (bool): Whether to pickle the results.
         pickles_root_path (str): Path to the folder where results will be pickled.
     """
@@ -256,20 +257,59 @@ def remove_older_than(hours, path):
 
 
 if __name__ == "__main__":
+    # This demonstrates how to use SmartClass. First, we define some classes:
+
     class A(SmartClass):
-        def __init__(self, config, d, a):
-            SmartClass.__init__(self, config, d)
+        """User defined classes should to inherit from SmartClass, and they should take at least these parameters:
+
+        Args:
+            config (Config): A Config instance (explained below).
+            d (dict): A potentially empty dictionary that will contain instances of the dependencies (explained below).
+        """
+        def __init__(self, config, d, a, message):
+            SmartClass.__init__(self, config, d)  # remember to call the init method of SmartClass
             self.a = a
+            self.message = message
 
     class B(SmartClass):
-        dependencies = (A,)
+        dependencies = [A]
+        """We indicate that class B requires an instance of class A. Because of this, an instance of A will be provided 
+        in d, which can be accessed as d['A'] (the dictionary key is the name of the class).
+        """
 
         def __init__(self, config, d, b):
             SmartClass.__init__(self, config, d)
+            self.myA = d['A']
             self.b = b
 
-    my_config = Config(identifier='1', variants={'A': 'Special', 'B': 'Cool'}, pickle_instances=True,
-                       parameters_path="parameters")
+        def print_result(self):
+            print(f"{self.myA.message} {self.myA.a + self.b}")
+
+    """For each class there needs to be a json file with the parameters that its init function takes 
+    (excluding config and d). The names of the parameters in the json file should be the same as the names in the init
+    function. The file needs to be called X.json where X is the class name. 
+    The parameters in this file will act as default parameters. 
+    
+    You can also define alternative configurations that use different parameters by adding other json files named
+    X|Y.json where Y is the name of the alternative configuration. Then specify which configurations you are using in 
+    the variants argument of Config:
+    """
+
+    variants = {'A': 'Bigger'}  # you can specify an alternative configuration for each class
+
+    my_config = Config(identifier="Sim1",  # this is an optional name to differentiate different runs of a simulation
+                       variants=variants,
+                       parameters_path="parameters",  # path to the folder with the json files
+                       pickle_instances=True,  # set this to true if you want to pickle initialized instances
+                       pickles_root_path="pickles"  # where to save the pickles
+                       )
+
+    """Then we just need to create an instance of B using the current_instance method. SmartClass will initialize A 
+    on its own. Also, if pickle_instances is set to True, it will retrieve previously initialized instances unless 
+    the code or the parameters of the class or any of its parents or dependencies has changed.
+    """
     my_b = B.current_instance(my_config)
 
-    # remove_older_than(0, "pickles")
+    my_b.print_result()
+
+    # remove_older_than(hours=0, path="pickles")  # we can use this to delete old pickles
