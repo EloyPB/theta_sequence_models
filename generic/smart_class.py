@@ -57,8 +57,6 @@ class SmartClass:
     @classmethod
     def complete_path(cls, root_path, identifier, variants):
         tag = (f"{identifier}_" if len(identifier) else "") + '_'.join(cls.variant_tags(variants))
-        if len(tag) == 0:
-            tag = "Default"
         return f"{root_path}/{tag}/{cls.__name__}/"
 
     @classmethod
@@ -68,7 +66,10 @@ class SmartClass:
             accumulated_tags.append(variants[cls.__name__])
         for dependency in cls.dependencies:
             accumulated_tags += dependency.variant_tags(variants)
-        return accumulated_tags[::-1]
+        if len(accumulated_tags):
+            return accumulated_tags[::-1]
+        else:
+            return ["Default"]
 
     def maybe_save_fig(self, fig, name, sub_folder="", dpi=200):
         """Save and close a figure if 'save_figures' is True.
