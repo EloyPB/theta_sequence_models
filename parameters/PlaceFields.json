@@ -1,0 +1,9 @@
+{
+  "bin_size": 2,
+  "sigma": 3,
+  "min_peak": 0.2,
+  "threshold": 0.1,
+  "prominence_threshold": 0.5,
+  "discard": 80,
+  "last_unit": 170
+}

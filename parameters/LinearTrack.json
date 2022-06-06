@@ -1,12 +1,12 @@
 {
-  "length": 180,
+  "length": 200,
   "ds": 1,
   "dt": 0.001,
   "num_features": 128,
   "features_sigma_range": [1, 20],
-  "speed_profile_points": [[0, 15], [90, 80], [180, 15]],
+  "speed_profile_points": [[0, 15], [100, 80], [200, 15]],
   "speed_factor_sigma": 2,
   "speed_factor_amplitude": 1,
-  "num_laps": 10,
+  "num_laps": 26,
   "interlap_t": 0
 }

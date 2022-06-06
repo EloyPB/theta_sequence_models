@@ -18,11 +18,11 @@ class Config:
         pickle_results (bool): Whether to pickle the results.
         pickles_root_path (str): Path to the folder where results will be pickled.
     """
-    def __init__(self, identifier=None, variants={}, parameters_path="parameters", save_figures=False,
+    def __init__(self, identifier="", variants={}, parameters_path="parameters", save_figures=False,
                  figure_format="png", figures_root_path="figures", pickle_instances=False, pickle_results=False,
                  pickles_root_path="pickles"):
 
-        self.identifier = "" if None else str(identifier)
+        self.identifier = str(identifier)
         self.variants = variants
         self.parameters_path = parameters_path
         self.save_figures = save_figures
@@ -56,6 +56,8 @@ class SmartClass:
     @classmethod
     def complete_path(cls, root_path, identifier, variants):
         tag = (f"{identifier}_" if len(identifier) else "") + '_'.join(cls.variant_tags(variants))
+        if len(tag) == 0:
+            tag = "Default"
         return f"{root_path}/{tag}/{cls.__name__}/"
 
     @classmethod

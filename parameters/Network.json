@@ -13,11 +13,15 @@
   "base_f": 0.14,
   "tau_f": 0.32,
   "tau_d": 0.06,
-  "pos_factor_0": 0,
+  "pos_factor_0": 0.4,
   "pos_factor_concentration": 2,
-  "pos_factor_phase": 100,
+  "pos_factor_phase": 90,
   "pos_sigmoid_gain": 12,
   "pos_sigmoid_midpoint": 0.7,
+  "reset_indices": [0, 6],
+  "reset_value": 1,
+  "learning_rate": 0.00005,
+  "log_act": 0,
   "log_dynamics": 0,
   "log_pos_input": 0
 }

@@ -34,6 +34,8 @@ class LinearTrack(SmartClass):
         self.speed_factor_log = []
         self.lap_start_indices = []
 
+        self.mean_speeds = None
+
         # calculate mean lap duration
         x = 0
         steps = 0
@@ -137,10 +139,33 @@ class LinearTrack(SmartClass):
         ax[2].set_xlabel("Time (s)")
         fig.align_ylabels()
 
+    def compute_mean_speeds(self, bin_size, plot=False):
+        num_bins = int(self.length / bin_size)
+        self.mean_speeds = np.full(num_bins, np.nan)
+        mean_speeds = np.zeros(num_bins)
+        occupancies = np.zeros(num_bins)
+        for x, speed in zip(self.x_log, self.speed_log):
+            bin_num = int(x / bin_size)
+            mean_speeds[bin_num] += speed
+            occupancies[bin_num] += 1
+        positive = occupancies > 0
+        self.mean_speeds[positive] = mean_speeds[positive] / occupancies[positive]
+
+        if plot:
+            fig, ax = plt.subplots()
+            x_sp = np.arange(self.ds/2, self.length, self.ds)
+            ax.plot(x_sp, self.speed_profile, label="profile", color='gray')
+            x = np.arange(bin_size/2, self.length, bin_size)
+            ax.plot(x, self.mean_speeds, label="mean")
+            ax.set_ylabel("Mean speed (cm/s)")
+            ax.set_xlabel("Position (cm)")
+            ax.legend()
+
 
 if __name__ == "__main__":
     track = LinearTrack.current_instance()
 
     print("plotting...")
     track.plot_trajectory()
+    track.compute_mean_speeds(bin_size=2, plot=True)
     plt.show()
