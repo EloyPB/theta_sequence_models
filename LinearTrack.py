@@ -2,14 +2,14 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from generic.noise import smoothed_noise
-from generic.smart_class import Config, SmartClass
+from generic.smart_sim import Config, SmartSim
 
 
-class LinearTrack(SmartClass):
+class LinearTrack(SmartSim):
     def __init__(self, length, ds, dt, num_features, features_sigma_range, speed_profile_points, speed_factor_sigma=3,
                  speed_factor_amplitude=1, num_laps=0, interlap_t=0, config=Config(), d={}):
 
-        SmartClass.__init__(self, config, d)
+        SmartSim.__init__(self, config, d)
 
         if length % ds != 0:
             sys.exit("the perimeter should be divisible by ds")

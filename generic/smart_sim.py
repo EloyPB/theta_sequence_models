@@ -34,7 +34,7 @@ class Config:
         self.pickles_root_path = pickles_root_path
 
 
-class SmartClass:
+class SmartSim:
     dependencies = ()
 
     def __init__(self, config: Config, d: dict, **parameters_dict):
@@ -260,7 +260,7 @@ def remove_older_than(hours, path):
 if __name__ == "__main__":
     # This demonstrates how to use SmartClass. First, we define some classes:
 
-    class A(SmartClass):
+    class A(SmartSim):
         """User defined classes should to inherit from SmartClass, and they should take at least these parameters:
 
         Args:
@@ -268,18 +268,18 @@ if __name__ == "__main__":
             d (dict): A potentially empty dictionary that will contain instances of the dependencies (explained below).
         """
         def __init__(self, config, d, a, message):
-            SmartClass.__init__(self, config, d)  # remember to call the init method of SmartClass
+            SmartSim.__init__(self, config, d)  # remember to call the init method of SmartClass
             self.a = a
             self.message = message
 
-    class B(SmartClass):
+    class B(SmartSim):
         dependencies = [A]
         """We indicate that class B requires an instance of class A. Because of this, an instance of A will be provided 
         in d, which can be accessed as d['A'] (the dictionary key is the name of the class).
         """
 
         def __init__(self, config, d, b):
-            SmartClass.__init__(self, config, d)
+            SmartSim.__init__(self, config, d)
             self.myA = d['A']
             self.b = b
 

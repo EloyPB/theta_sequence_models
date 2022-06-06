@@ -4,11 +4,11 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import colors
 from LinearTrack import LinearTrack
-from generic.smart_class import Config, SmartClass
+from generic.smart_sim import Config, SmartSim
 from generic.timer import timer
 
 
-class Network(SmartClass):
+class Network(SmartSim):
     dependencies = [LinearTrack]
 
     def __init__(self, num_units, tau, w_rec_sigma, w_rec_exc, w_rec_inh, w_rec_shift, act_sigmoid_gain,
@@ -17,7 +17,7 @@ class Network(SmartClass):
                  reset_value, learning_rate, log_act=False, log_theta=False, log_pos_input=False, log_dynamics=False,
                  config=Config(), d={}):
 
-        SmartClass.__init__(self, config, d)
+        SmartSim.__init__(self, config, d)
 
         if 'LinearTrack' in d:
             self.track: LinearTrack = d['LinearTrack']

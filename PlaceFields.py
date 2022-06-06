@@ -3,15 +3,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter1d
 from Network import Network, LinearTrack
-from generic.smart_class import Config, SmartClass
+from generic.smart_sim import Config, SmartSim
 
 
-class PlaceFields(SmartClass):
+class PlaceFields(SmartSim):
     dependencies = [Network]
 
     def __init__(self, bin_size, sigma, min_peak, threshold, prominence_threshold=0.33, discard=0, last_unit=None,
                  config=Config(), d={}):
-        SmartClass.__init__(self, config, d)
+        SmartSim.__init__(self, config, d)
 
         self.network: Network = d['Network']
         self.track: LinearTrack = self.network.d['LinearTrack']

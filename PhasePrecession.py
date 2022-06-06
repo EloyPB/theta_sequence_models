@@ -2,14 +2,14 @@ import copy
 import numpy as np
 from scipy import odr
 import matplotlib.pyplot as plt
-from PlaceFields import LinearTrack, Network, PlaceFields, SmartClass, Config
+from PlaceFields import LinearTrack, Network, PlaceFields, SmartSim, Config
 
 
-class PhasePrecession(SmartClass):
+class PhasePrecession(SmartSim):
     dependencies = [PlaceFields]
 
     def __init__(self, phase_bin_size, config=Config(), d={}):
-        SmartClass.__init__(self, config, d)
+        SmartSim.__init__(self, config, d)
 
         self.fields: PlaceFields = d['PlaceFields']
         self.network: Network = self.fields.d['Network']
