@@ -84,7 +84,7 @@ class Network(SmartSim):
         ax.set_ylabel("Output unit number")
         plt.colorbar(mat, ax=ax)
 
-    def run(self, reset_indices, reset_value=1, learning_rate=0, verbose=1):
+    def run(self, reset_indices, reset_value=1, learning_rate=0, verbose=0):
         exp_concentration = np.exp(self.pos_factor_concentration)
 
         for lap, lap_start_index in enumerate(self.track.lap_start_indices):
@@ -109,8 +109,12 @@ class Network(SmartSim):
                 pos_factor = (np.exp(self.pos_factor_concentration
                                      * np.cos(self.theta_phase_log[index] - self.pos_factor_phase))
                               / exp_concentration)
-                features = self.track.features[int(self.track.x_log[index] / self.track.ds)]
-                pos_input = self.f_pos(self.w_pos @ features) * pos_factor
+
+                if self.track.speed_log[index]:
+                    features = self.track.features[int(self.track.x_log[index] / self.track.ds)]
+                    pos_input = self.f_pos(self.w_pos @ features) * pos_factor
+                else:
+                    pos_input = np.zeros(self.num_units)
                 if self.log_pos_input:
                     self.pos_input_log[index] = pos_input.copy()
 
@@ -136,7 +140,7 @@ class Network(SmartSim):
                     self.depression_log[index] = self.depression.copy()
                     self.facilitation_log[index] = self.facilitation.copy()
 
-                if learning_rate:
+                if self.track.speed_log[index]:
                     self.w_pos += learning_rate * pos_factor * (act_out * (act_out - pos_input))[np.newaxis].T * features
 
     def theta(self, index):
@@ -244,7 +248,7 @@ class Network(SmartSim):
 
 if __name__ == "__main__":
     config = Config(variants={
-        'LinearTrack': 'OneLap',
+        # 'LinearTrack': 'OneLap',
         # 'LinearTrack': 'FixSpeed',
         'Network': 'Log'
     })

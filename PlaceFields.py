@@ -109,9 +109,10 @@ class PlaceFields(SmartSim):
             bins = abs(peak_index - bound_index)
         return bins * self.bin_size
 
-    def sizes_vs_mean_speed(self, half_size=False, colour_by_position=True):
+    def sizes_vs_mean_speed(self, half_size=False, plot=True, colour_by_position=True):
         speeds = []
         sizes = []
+        positions = []
 
         for field_num, prominence_ok in enumerate(self.field_prominence_ok):
             if not prominence_ok:
@@ -120,26 +121,29 @@ class PlaceFields(SmartSim):
             peak_index = self.field_peak_indices[field_num]
             bound_indices = self.field_bound_indices[field_num]
             speeds.append(np.nanmean(self.track.mean_speeds[bound_indices[0]:bound_indices[1] + 1]))
+            positions.append(self.field_peak_indices[field_num] * self.bin_size)
 
             if half_size:
                 sizes.append(self.size(peak_index, bound_indices, self.field_bounds_ok[field_num]))
             else:
                 sizes.append(self.half_size(peak_index, bound_indices, self.field_bounds_ok[field_num]))
 
-        fig, ax = plt.subplots()
-        if colour_by_position:
-            positions = [index * self.bin_size for ok, index in
-                         zip(self.field_prominence_ok, self.field_peak_indices) if ok]
-            sc = ax.scatter(speeds, sizes, c=positions)
-            bar = fig.colorbar(sc)
-            bar.set_label("Peak position (cm)")
+        self.maybe_pickle_results(speeds, "speeds")
+        self.maybe_pickle_results(sizes, "sizes")
+        self.maybe_pickle_results(positions, "positions")
 
-        else:
-            ax.plot(speeds, sizes, 'o')
-        y_label = "Place field half-size (cm)" if half_size else "Place field size (cm)"
-        ax.set_ylabel(y_label)
-        ax.set_xlabel("Mean running speed (cm/s)")
-        self.maybe_save_fig(fig, "size_vs_speed")
+        if plot:
+            fig, ax = plt.subplots()
+            if colour_by_position:
+                sc = ax.scatter(speeds, sizes, c=positions)
+                bar = fig.colorbar(sc)
+                bar.set_label("Peak position (cm)")
+            else:
+                ax.plot(speeds, sizes, 'o')
+            y_label = "Place field half-size (cm)" if half_size else "Place field size (cm)"
+            ax.set_ylabel(y_label)
+            ax.set_xlabel("Mean running speed (cm/s)")
+            self.maybe_save_fig(fig, "size_vs_speed")
 
 
 if __name__ == "__main__":

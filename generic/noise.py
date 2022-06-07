@@ -1,8 +1,12 @@
 import numpy as np
+from numpy.random import default_rng
 import matplotlib.pyplot as plt
 
 
-def smoothed_noise(length, ds, sigma, amplitude=1., mean=0, plot=False):
+def smoothed_noise(length, ds, sigma, amplitude=1., mean=0, plot=False, rng=None):
+    if rng is None:
+        rng = default_rng()
+
     num_bins = int(length / ds)
     norm_sigma = sigma / ds
 
@@ -11,7 +15,7 @@ def smoothed_noise(length, ds, sigma, amplitude=1., mean=0, plot=False):
     kernel_x = np.linspace(-kernel_half_size, kernel_half_size, kernel_size)
     kernel = np.exp(-kernel_x ** 2 / (2 * norm_sigma ** 2)) / norm_sigma / np.sqrt(2 * np.pi)
 
-    noise = np.random.normal(size=num_bins + 2 * kernel_half_size)
+    noise = rng.normal(size=num_bins + 2 * kernel_half_size)
 
     smoothed = np.empty(num_bins)
     for start_index in range(0, num_bins):

@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+from numpy.random import default_rng
 import matplotlib.pyplot as plt
 from generic.noise import smoothed_noise
 from generic.smart_sim import Config, SmartSim
@@ -19,6 +20,7 @@ class LinearTrack(SmartSim):
         self.num_bins = int(length / ds)  # number of spatial bins
         self.dt = dt  # temporal bin size
 
+        self.rng = default_rng(self.config.identifier)
         self.num_features = num_features
         self.features = self.random_features(features_sigma_range)
 
@@ -74,7 +76,7 @@ class LinearTrack(SmartSim):
     def random_features(self, sigma_range, amplitude=2, offset=0):
         features = np.empty((self.num_bins, self.num_features))
         for feature_num, sigma in enumerate(np.random.uniform(sigma_range[0], sigma_range[1], self.num_features)):
-            feature = smoothed_noise(self.length, self.ds, sigma, amplitude, offset)
+            feature = smoothed_noise(self.length, self.ds, sigma, amplitude, offset, self.rng)
             features[:, feature_num] = feature
 
         # return features sorted by peak position
@@ -103,8 +105,8 @@ class LinearTrack(SmartSim):
         # generate speed factor
         duration = num_laps * (self.mean_lap_duration + self.dt)  # dt seems to be necessary because of some stochastic numerical error
         if self.speed_factor_sigma:
-            speed_factor = smoothed_noise(length=duration, ds=self.dt, sigma=self.speed_factor_sigma,
-                                          amplitude=self.speed_factor_amplitude, mean=1)
+            speed_factor = smoothed_noise(duration, self.dt, self.speed_factor_sigma, self.speed_factor_amplitude,
+                                          mean=1, rng=self.rng)
         else:
             speed_factor = np.ones(int(duration / self.dt))
 

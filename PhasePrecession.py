@@ -97,31 +97,39 @@ class PhasePrecession(SmartSim):
 
         self.maybe_save_fig(fig, f"phase precession {unit}")
 
-    def slopes_vs_mean_speed(self, colour_by_position=True):
+    def slopes_vs_mean_speed(self, plot=True, colour_by_position=True):
         speeds = []
+        slopes = []
+        positions = []
         not_nan = ~np.isnan(self.slopes)
-        for slope, bounds in zip(self.slopes[not_nan], self.fields.field_bound_indices[not_nan]):
+        for slope, bounds, peak_index in zip(self.slopes[not_nan], self.fields.field_bound_indices[not_nan],
+                                             self.fields.field_peak_indices[not_nan]):
             speeds.append(np.nanmean(self.track.mean_speeds[bounds[0]:bounds[1]+1]))
+            slopes.append(1/slope)
+            positions.append(peak_index * self.spatial_bin_size)
 
-        fig, ax = plt.subplots()
-        if colour_by_position:
-            positions = [index * self.spatial_bin_size for index, slope in
-                         zip(self.fields.field_peak_indices, self.slopes) if not np.isnan(slope)]
-            sc = ax.scatter(speeds, 1/self.slopes[not_nan], c=positions)
-            bar = fig.colorbar(sc)
-            bar.set_label("Peak position (cm)")
-        else:
-            ax.plot(speeds, 1/self.slopes[not_nan], 'o')
+        self.maybe_pickle_results(speeds, "speeds")
+        self.maybe_pickle_results(slopes, "slopes")
+        self.maybe_pickle_results(positions, "positions")
 
-        ax.set_ylabel("Inverse phase precession slope (cm/deg)")
-        ax.set_xlabel("Mean running speed (cm/s)")
-        self.maybe_save_fig(fig, "slope_vs_speed")
+        if plot:
+            fig, ax = plt.subplots()
+            if colour_by_position:
+                sc = ax.scatter(speeds, slopes, c=positions)
+                bar = fig.colorbar(sc)
+                bar.set_label("Peak position (cm)")
+            else:
+                ax.plot(speeds, slopes, 'o')
+
+            ax.set_ylabel("Inverse phase precession slope (cm/deg)")
+            ax.set_xlabel("Mean running speed (cm/s)")
+            self.maybe_save_fig(fig, "slope_vs_speed")
 
 
 if __name__ == "__main__":
-    pp = PhasePrecession.current_instance(Config(identifier='', pickle_instances=True))
-    # for unit in [40, 60, 80, 100, 120]:
-    #     pp.plot_cloud(unit)
+    pp = PhasePrecession.current_instance(Config(pickle_instances=True))
+    for unit in [40, 60, 80, 100, 120]:
+        pp.plot_cloud(unit)
     pp.slopes_vs_mean_speed()
 
     plt.show()

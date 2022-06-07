@@ -13,7 +13,7 @@
   "base_f": 0.14,
   "tau_f": 0.32,
   "tau_d": 0.06,
-  "pos_factor_0": 0.4,
+  "pos_factor_0": 0.3,
   "pos_factor_concentration": 2,
   "pos_factor_phase": 90,
   "pos_sigmoid_gain": 12,

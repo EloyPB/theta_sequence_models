@@ -10,7 +10,7 @@ class Config:
     """Helper class that bundles together parameters used by SmartClass
 
     Args:
-        identifier (str): Optional ID that will be prepended to the name of folders saving pickles and results.
+        identifier (int): Optional ID that will be prepended to the name of folders saving pickles and results.
         variants (dict): Keys are class names and values are alternative configuration names.
         save_figures (bool): Whether to save and close the figures.
         figure_format (str): Format of the figures (e.g., png).
@@ -19,11 +19,11 @@ class Config:
         pickle_results (bool): Whether to pickle the results.
         pickles_root_path (str): Path to the folder where results will be pickled.
     """
-    def __init__(self, identifier="", variants={}, parameters_path="parameters", save_figures=False,
+    def __init__(self, identifier=None, variants={}, parameters_path="parameters", save_figures=False,
                  figure_format="png", figures_root_path="figures", pickle_instances=False, pickle_results=False,
                  pickles_root_path="pickles"):
 
-        self.identifier = str(identifier)
+        self.identifier = identifier
         self.variants = variants
         self.parameters_path = parameters_path
         self.save_figures = save_figures
@@ -56,7 +56,7 @@ class SmartSim:
 
     @classmethod
     def complete_path(cls, root_path, identifier, variants):
-        tag = (f"{identifier}_" if len(identifier) else "") + '_'.join(cls.variant_tags(variants))
+        tag = (f"{identifier}_" if identifier is not None else "") + '_'.join(cls.variant_tags(variants))
         return f"{root_path}/{tag}/{cls.__name__}/"
 
     @classmethod
@@ -299,7 +299,7 @@ if __name__ == "__main__":
 
     variants = {'A': 'Bigger'}  # you can specify an alternative configuration for each class
 
-    my_config = Config(identifier="Sim1",  # this is an optional name to differentiate different runs of a simulation
+    my_config = Config(identifier=1,  # this is an optional number to identify different runs of a simulation
                        variants=variants,
                        parameters_path="parameters",  # path to the folder with the json files
                        pickle_instances=True,  # set this to true if you want to pickle initialized instances
