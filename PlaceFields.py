@@ -10,7 +10,7 @@ class PlaceFields(SmartSim):
     dependencies = [Network]
 
     def __init__(self, bin_size, sigma, min_peak, threshold, prominence_threshold=0.33, discard=0, last_unit=None,
-                 config=Config(), d={}):
+                 dens_window_size=10, dens_window_stride=2, config=Config(), d={}):
         SmartSim.__init__(self, config, d)
 
         self.network: Network = d['Network']
@@ -26,9 +26,10 @@ class PlaceFields(SmartSim):
         self.prominence_threshold = prominence_threshold
         self.first_t_step = int(discard / self.track.dt)
         self.last_unit = self.network.num_units if last_unit is None else last_unit
+        self.dens_window_size = dens_window_size
+        self.dens_window_stride = dens_window_stride
 
         self.activations = np.full((self.last_unit, self.num_bins), np.nan)
-        self.field_peak_ok = np.full(self.last_unit, False)
         self.field_peak_indices = np.full(self.last_unit, np.nan, dtype=int)
         self.field_bound_indices = np.full((self.last_unit, 2), np.nan, dtype=int)
         self.field_bounds_ok = np.full((self.last_unit, 2), False)
@@ -70,7 +71,6 @@ class PlaceFields(SmartSim):
             if activations[peak_index] < self.min_peak:
                 continue
 
-            self.field_peak_ok[field_num] = True
             self.field_peak_indices[field_num] = peak_index
             threshold = activations[peak_index] * self.threshold
             below_threshold = activations < threshold
@@ -145,10 +145,35 @@ class PlaceFields(SmartSim):
             ax.set_xlabel("Mean running speed (cm/s)")
             self.maybe_save_fig(fig, "size_vs_speed")
 
+    def density_vs_mean_speed(self, plot=True):
+        peak_positions = (self.field_peak_indices[self.field_prominence_ok] + 0.5) * self.bin_size
+        starts = np.arange(0, self.track.length, self.dens_window_stride)
+        ends = np.arange(self.dens_window_size, self.track.length + self.dens_window_stride, self.dens_window_stride)
+
+        speeds = []
+        densities = []
+
+        for start, end in zip(starts, ends):
+            densities.append(np.sum((start <= peak_positions) & (peak_positions < end)) / self.dens_window_size)
+            start_index = int(start / self.bin_size)
+            end_index = int(end / self.bin_size)
+            speeds.append(np.nanmean(self.track.mean_speeds[start_index:end_index+1]))
+
+        self.maybe_pickle_results(speeds, "speeds", sub_folder="density")
+        self.maybe_pickle_results(densities, "densities", sub_folder="density")
+
+        if plot:
+            fig, ax = plt.subplots()
+            ax.scatter(speeds, densities)
+            ax.set_xlabel("Mean speed (cm/s)")
+            ax.set_ylabel("Place field density (peaks/cm)")
+            self.maybe_save_fig(fig, "density_vs_speed")
+
 
 if __name__ == "__main__":
     pf = PlaceFields.current_instance(Config(pickle_instances=True))
-    pf.plot_activations()
-    pf.sizes_vs_mean_speed(colour_by_position=True)
+    # pf.plot_activations()
+    # pf.sizes_vs_mean_speed(colour_by_position=True)
+    pf.density_vs_mean_speed()
 
     plt.show()

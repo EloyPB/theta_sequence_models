@@ -5,5 +5,7 @@
   "threshold": 0.1,
   "prominence_threshold": 0.5,
   "discard": 80,
-  "last_unit": 170
+  "last_unit": 170,
+  "dens_window_size": 10,
+  "dens_window_stride": 2
 }
