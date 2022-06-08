@@ -157,7 +157,7 @@ class PlaceFields(SmartSim):
         for start, end in zip(starts, ends):
             count = np.sum((start <= peak_positions) & (peak_positions < end))
             densities.append(count / self.dens_window_size)
-            separations.append(np.nan if np.isnan(count) else self.dens_window_size / count)
+            separations.append(np.nan if count == 0 else self.dens_window_size / count)
             start_index = int(start / self.bin_size)
             end_index = int(end / self.bin_size)
             speeds.append(np.nanmean(self.track.mean_speeds[start_index:end_index+1]))
@@ -176,8 +176,8 @@ class PlaceFields(SmartSim):
 
 if __name__ == "__main__":
     pf = PlaceFields.current_instance(Config(pickle_instances=True))
-    # pf.plot_activations()
-    # pf.sizes_vs_mean_speed(colour_by_position=True)
-    pf.density_vs_mean_speed()
+    pf.plot_activations()
+    pf.sizes_vs_mean_speed(colour_by_position=True)
+    # pf.density_vs_mean_speed()
 
     plt.show()

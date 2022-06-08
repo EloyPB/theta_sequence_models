@@ -8,6 +8,9 @@ from generic.smart_sim import Config, SmartSim
 from generic.timer import timer
 
 
+TWO_PI = 2 * np.pi
+
+
 class Network(SmartSim):
     dependencies = [LinearTrack]
 
@@ -41,6 +44,7 @@ class Network(SmartSim):
         self.theta_concentration = theta_concentration
         self.theta_multiplier = (theta_max - theta_min) / np.exp(theta_concentration)
         self.theta_cycle_steps = 1 / (8 * self.track.dt)
+        self.theta_phase_inc = TWO_PI / self.theta_cycle_steps
 
         self.base_f = base_f
         self.tau_f = tau_f
@@ -72,6 +76,8 @@ class Network(SmartSim):
         if log_theta:
             self.theta_log = np.empty(len(self.track.x_log))
         self.theta_phase_log = np.empty(len(self.track.x_log))
+        self.theta_phase_log[-1] = 0
+        self.theta_cycle_starts = []
 
         self.run(reset_indices, reset_value, learning_rate)
 
@@ -144,7 +150,11 @@ class Network(SmartSim):
                     self.w_pos += learning_rate * pos_factor * (act_out * (act_out - pos_input))[np.newaxis].T * features
 
     def theta(self, index):
-        self.theta_phase_log[index] = 2 * np.pi * (index % self.theta_cycle_steps) / self.theta_cycle_steps
+        self.theta_phase_log[index] = self.theta_phase_log[index - 1] + self.theta_phase_inc
+        if self.theta_phase_log[index] > TWO_PI:
+            self.theta_phase_log[index] -= TWO_PI
+            self.theta_cycle_starts.append(index)
+
         return (-np.exp(self.theta_concentration * np.cos(self.theta_phase_log[index]))
                 * self.theta_multiplier + self.theta_max)
 
@@ -156,7 +166,7 @@ class Network(SmartSim):
 
     def plot_activities(self, t_start=0, t_end=None, apply_f=False, pos_input=False, theta=False):
         index_start = int(t_start / self.track.dt)
-        index_end = int(t_end / self.track.dt) if t_end is not None else len(self.act_log)
+        index_end = int(t_end / self.track.dt) if t_end is not None else len(self.act_out_log)
 
         if apply_f:
             act_log = self.act_out_log[index_start:index_end]

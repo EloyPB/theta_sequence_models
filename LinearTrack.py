@@ -76,7 +76,7 @@ class LinearTrack(SmartSim):
     def random_features(self, sigma_range, amplitude=2, offset=0):
         features = np.empty((self.num_bins, self.num_features))
         for feature_num, sigma in enumerate(np.random.uniform(sigma_range[0], sigma_range[1], self.num_features)):
-            feature = smoothed_noise(self.length, self.ds, sigma, amplitude, offset, self.rng)
+            feature = smoothed_noise(self.length, self.ds, sigma, amplitude, offset, rng=self.rng)
             features[:, feature_num] = feature
 
         # return features sorted by peak position
