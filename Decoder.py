@@ -7,23 +7,20 @@ from PlaceFields import PlaceFields
 class Decoder(SmartSim):
     dependencies = [PlaceFields]
 
-    def __init__(self, bins_per_cycle, min_peak, config=Config(), d={}):
+    def __init__(self, min_peak, config=Config(), d={}):
         SmartSim.__init__(self, config, d)
         self.fields: PlaceFields = d['PlaceFields']
         self.network = self.fields.network
         self.track = self.network.track
 
-        self.bins_per_cycle = bins_per_cycle
-        self.dts_per_bin = self.network.theta_cycle_steps / bins_per_cycle
         self.min_peak = min_peak
 
         self.first_cycle = np.searchsorted(self.network.theta_cycle_starts, self.fields.first_t_step)
-        num_cycles = len(self.network.theta_cycle_starts[self.first_cycle:]) - 1
-        num_time_bins = bins_per_cycle * num_cycles
+        num_time_bins = self.network.theta_cycle_starts[-1] - self.network.theta_cycle_starts[self.first_cycle]
 
         self.correlations = np.empty((num_time_bins, self.fields.num_bins))
-        self.t = np.empty(num_time_bins)
-        self.x_log = np.empty(num_time_bins)
+
+        self.decode()
 
     def decode(self):
         """Calculates the correlation between the population vector at some time window and the pop vector of
@@ -34,12 +31,10 @@ class Decoder(SmartSim):
         denom_y = np.sqrt(np.sum(self.fields.activations**2, axis=0) - n * mean_y**2)
 
         i = 0
-        for start in self.network.theta_cycle_starts[self.first_cycle:-1]:
-            for bin_num in range(self.bins_per_cycle):
-                t_first = int(start + bin_num * self.dts_per_bin)
-                t_last = int(start + (bin_num + 1) * self.dts_per_bin)
-
-                x = np.mean(self.network.act_out_log[t_first:t_last, :self.fields.last_unit], axis=0)
+        for start, end in zip(self.network.theta_cycle_starts[self.first_cycle:-1],
+                              self.network.theta_cycle_starts[self.first_cycle+1:]):
+            for t in range(start, end):
+                x = self.network.act_out_log[t, :self.fields.last_unit]
 
                 if np.max(x) < self.min_peak:
                     self.correlations[i] = 0
@@ -48,10 +43,8 @@ class Decoder(SmartSim):
                     denom_x = np.sqrt(np.sum(x ** 2) - n * mean_x ** 2)
                     self.correlations[i] = (x @ self.fields.activations - n * mean_x * mean_y) / (denom_x * denom_y)
 
-                self.t[i] = (t_first + t_last - 1) / 2 * self.track.dt
-                self.x_log[i] = np.mean(self.track.x_log[t_first:t_last])
-
                 i += 1
+                print(i)
 
     def plot(self):
         fig, ax = plt.subplots()
@@ -64,7 +57,9 @@ class Decoder(SmartSim):
         ax.xaxis.set_ticks_position('bottom')
         c_bar = fig.colorbar(mat)
         c_bar.set_label("P.V. Correlation")
-        ax.plot(self.t, self.x_log, color='white')
+
+        t = np.arange(t_start, t_end, self.track.dt)
+        ax.plot(t, self.track.x_log[first_index:self.network.theta_cycle_starts[-1]], color='white')
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Position (cm)")
 
