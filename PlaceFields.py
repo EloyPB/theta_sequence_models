@@ -152,15 +152,19 @@ class PlaceFields(SmartSim):
 
         speeds = []
         densities = []
+        separations = []
 
         for start, end in zip(starts, ends):
-            densities.append(np.sum((start <= peak_positions) & (peak_positions < end)) / self.dens_window_size)
+            count = np.sum((start <= peak_positions) & (peak_positions < end))
+            densities.append(count / self.dens_window_size)
+            separations.append(np.nan if np.isnan(count) else self.dens_window_size / count)
             start_index = int(start / self.bin_size)
             end_index = int(end / self.bin_size)
             speeds.append(np.nanmean(self.track.mean_speeds[start_index:end_index+1]))
 
         self.maybe_pickle_results(speeds, "speeds", sub_folder="density")
         self.maybe_pickle_results(densities, "densities", sub_folder="density")
+        self.maybe_pickle_results(separations, "separations", sub_folder="density")
 
         if plot:
             fig, ax = plt.subplots()

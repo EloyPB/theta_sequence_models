@@ -37,7 +37,8 @@ def plot(class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path_y, re
 
 
 x_label = "Mean speed (cm/s)"
-plot(PlaceFields, x_label, "speeds", "Place field size (cm)", "sizes", "positions", "Position (cm)")
+# plot(PlaceFields, x_label, "speeds", "Place field size (cm)", "sizes", "positions", "Position (cm)")
 plot(PlaceFields, x_label, "density/speeds", "Place field density (peaks/cm)", "density/densities")
-plot(PhasePrecession, x_label, "speeds", "Inverse phase precession slope (cm/deg)", "slopes", "positions", "Position (cm)")
+plot(PlaceFields, x_label, "density/speeds", "Place field separation (cm/peak)", "density/separations")
+# plot(PhasePrecession, x_label, "speeds", "Inverse phase precession slope (cm/deg)", "slopes", "positions", "Position (cm)")
 plt.show()

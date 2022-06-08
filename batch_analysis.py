@@ -13,9 +13,9 @@ def analyze(identifier):
                     pickles_root_path=pickles_path)
 
     pp = PhasePrecession.current_instance(config)
-    pp.fields.sizes_vs_mean_speed(colour_by_position=True)
+    # pp.fields.sizes_vs_mean_speed(colour_by_position=True)
     pp.fields.density_vs_mean_speed()
-    pp.slopes_vs_mean_speed()
+    # pp.slopes_vs_mean_speed()
 
 
 # RUN ANALYSES
