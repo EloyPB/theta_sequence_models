@@ -2,6 +2,7 @@ from multiprocessing import Pool
 from generic.smart_sim import Config
 from batch_config import *
 from PhasePrecession import PhasePrecession
+from ThetaSweeps import ThetaSweeps
 from generic.timer import timer
 
 
@@ -13,9 +14,12 @@ def analyze(identifier):
                     pickles_root_path=pickles_path)
 
     pp = PhasePrecession.current_instance(config)
-    # pp.fields.sizes_vs_mean_speed(colour_by_position=True)
-    pp.fields.density_vs_mean_speed()
-    # pp.slopes_vs_mean_speed()
+    pp.fields.sizes_vs_mean_speed(colour_by_position=True)
+    # pp.fields.density_vs_mean_speed()
+    pp.slopes_vs_mean_speed()
+
+    sweeps = ThetaSweeps.current_instance(config)
+    sweeps.length_vs_mean_speed()
 
 
 # RUN ANALYSES

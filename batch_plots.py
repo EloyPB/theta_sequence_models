@@ -5,11 +5,12 @@ from generic.smart_sim import SmartSim
 from batch_config import *
 from PlaceFields import PlaceFields
 from PhasePrecession import PhasePrecession
+from ThetaSweeps import ThetaSweeps
 
 
 # PLOT RESULTS
 
-def plot(class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path_y, rel_path_c=None, c_label=""):
+def plot(class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path_y, c_label="", rel_path_c=None):
 
     def load(rel_path):
         with open(f"{path}{rel_path}", 'rb') as f:
@@ -37,8 +38,13 @@ def plot(class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path_y, re
 
 
 x_label = "Mean speed (cm/s)"
-# plot(PlaceFields, x_label, "speeds", "Place field size (cm)", "sizes", "positions", "Position (cm)")
-plot(PlaceFields, x_label, "density/speeds", "Place field density (peaks/cm)", "density/densities")
-plot(PlaceFields, x_label, "density/speeds", "Place field separation (cm/peak)", "density/separations")
-# plot(PhasePrecession, x_label, "speeds", "Inverse phase precession slope (cm/deg)", "slopes", "positions", "Position (cm)")
+
+plot(PlaceFields, x_label, "speeds", "Place field size (cm)", "sizes", "Position (cm)", "positions")
+# plot(PlaceFields, x_label, "density/speeds", "Place field density (peaks/cm)", "density/densities")
+# plot(PlaceFields, x_label, "density/speeds", "Place field separation (cm/peak)", "density/separations")
+
+plot(PhasePrecession, x_label, "speeds", "Inverse phase precession slope (cm/deg)", "slopes", "Position (cm)", "positions")
+
+plot(ThetaSweeps, x_label, "speeds", "Theta sweep length (cm)", "lengths", "Position (cm)", "positions")
+
 plt.show()
