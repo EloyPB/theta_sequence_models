@@ -127,7 +127,7 @@ class PhasePrecession(SmartSim):
 
 
 if __name__ == "__main__":
-    pp = PhasePrecession.current_instance(Config(pickle_instances=True))
+    pp = PhasePrecession.current_instance(Config(identifier=1, pickle_instances=True))
     for unit in [40, 60, 80, 100, 120]:
         pp.plot_cloud(unit)
     pp.slopes_vs_mean_speed()

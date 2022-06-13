@@ -10,7 +10,7 @@ from ThetaSweeps import ThetaSweeps
 
 # PLOT RESULTS
 
-def plot(class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path_y, c_label="", rel_path_c=None):
+def plot(class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path_y, c_label="", rel_path_c=None, s=8):
 
     def load(rel_path):
         with open(f"{path}{rel_path}", 'rb') as f:
@@ -28,7 +28,7 @@ def plot(class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path_y, c_
             all_c += load(rel_path_c)
 
     fig, ax = plt.subplots()
-    sc = ax.scatter(all_x, all_y, c=all_c if len(all_c) else None)
+    sc = ax.scatter(all_x, all_y, c=all_c if len(all_c) else None, s=s)
     if len(all_c):
         c_bar = fig.colorbar(sc)
         c_bar.set_label(c_label)

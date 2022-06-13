@@ -165,7 +165,7 @@ class LinearTrack(SmartSim):
 
 
 if __name__ == "__main__":
-    track = LinearTrack.current_instance()
+    track = LinearTrack.current_instance(Config(identifier=1))
 
     print("plotting...")
     track.plot_trajectory()

@@ -175,7 +175,7 @@ class PlaceFields(SmartSim):
 
 
 if __name__ == "__main__":
-    pf = PlaceFields.current_instance(Config(pickle_instances=True))
+    pf = PlaceFields.current_instance(Config(identifier=1, pickle_instances=True))
     pf.plot_activations()
     pf.sizes_vs_mean_speed(colour_by_position=True)
     # pf.density_vs_mean_speed()

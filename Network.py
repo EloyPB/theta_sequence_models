@@ -257,7 +257,7 @@ class Network(SmartSim):
 
 
 if __name__ == "__main__":
-    config = Config(variants={
+    config = Config(identifier=1, variants={
         # 'LinearTrack': 'OneLap',
         # 'LinearTrack': 'FixSpeed',
         'Network': 'Log'

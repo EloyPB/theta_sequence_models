@@ -68,7 +68,7 @@ class Decoder(SmartSim):
 
 
 if __name__ == "__main__":
-    decoder = Decoder.current_instance(Config(pickle_instances=True))
+    decoder = Decoder.current_instance(Config(identifier=1, pickle_instances=True))
     # decoder.network.plot_activities(apply_f=True)
     decoder.plot()
     plt.show()

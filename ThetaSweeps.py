@@ -84,7 +84,7 @@ class ThetaSweeps(SmartSim):
 
 
 if __name__ == "__main__":
-    sweeps = ThetaSweeps.current_instance(Config(pickle_instances=True))
+    sweeps = ThetaSweeps.current_instance(Config(identifier=1, pickle_instances=True))
     sweeps.plot()
     sweeps.length_vs_mean_speed()
 

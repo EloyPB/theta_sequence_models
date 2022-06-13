@@ -3,7 +3,7 @@ import sys
 from socket import gethostname
 
 
-NUM_RUNS = 4
+NUM_RUNS = 8
 variants = {}
 
 
