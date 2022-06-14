@@ -15,7 +15,7 @@ def analyze(identifier):
 
     pp = PhasePrecession.current_instance(config)
     pp.fields.sizes_vs_mean_speed()
-    # pp.fields.density_vs_mean_speed()
+    pp.fields.density_vs_mean_speed()
     pp.slopes_vs_mean_speed()
 
     sweeps = ThetaSweeps.current_instance(config)

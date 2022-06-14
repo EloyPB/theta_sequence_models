@@ -270,7 +270,7 @@ if __name__ == "__main__":
 
     # network.plot_rec_weights()
     # network.plot_activities(apply_f=0)
-    # network.plot_dynamics(t_end=None)
+    network.plot_dynamics(t_end=None)
     network.plot_activities(apply_f=1, pos_input=1, theta=1, t_start=0)
 
     plt.show()
