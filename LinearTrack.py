@@ -92,6 +92,8 @@ class LinearTrack(SmartSim):
             row_num = int(figure_plot_num / num_cols)
             col_num = figure_plot_num % num_cols
             ax[row_num, col_num].plot(x, feature)
+            ax[row_num, col_num].spines.right.set_visible(False)
+            ax[row_num, col_num].spines.top.set_visible(False)
 
     def plot_features_heatmap(self):
         fig, ax = plt.subplots()
@@ -168,6 +170,7 @@ if __name__ == "__main__":
     track = LinearTrack.current_instance(Config(identifier=1))
 
     print("plotting...")
+    track.plot_features()
     track.plot_trajectory()
     track.compute_mean_speeds(bin_size=2, plot=True)
     plt.show()

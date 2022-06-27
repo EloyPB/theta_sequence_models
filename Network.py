@@ -164,21 +164,27 @@ class Network(SmartSim):
     def f_pos(self, x):
         return 1 / (1 + np.exp(-self.pos_sigmoid_gain * (x - self.pos_sigmoid_midpoint)))
 
-    def plot_activities(self, t_start=0, t_end=None, apply_f=False, pos_input=False, theta=False):
+    def plot_activities(self, t_start=0, t_end=None, last_unit=None, apply_f=False, pos_input=False, theta=False,
+                        speed_factor=False):
         index_start = int(t_start / self.track.dt)
         index_end = int(t_end / self.track.dt) if t_end is not None else len(self.act_out_log)
 
+        if last_unit is None:
+            last_unit = self.num_units
+
         if apply_f:
-            act_log = self.act_out_log[index_start:index_end]
+            act_log = self.act_out_log[index_start:index_end, :last_unit]
         else:
-            act_log = self.act_log[index_start:index_end]
+            act_log = self.act_log[index_start:index_end, :last_unit]
 
         extent = (index_start * self.track.dt - self.track.dt / 2, index_end * self.track.dt - self.track.dt / 2,
                   -0.5, act_log.shape[1] - 0.5)
 
-        rows = 2 + theta
+        rows = 2 + theta + speed_factor
         fig = plt.figure(constrained_layout=True)
         height_ratios = [1, 1, 0.5] if theta else [1, 1]
+        if speed_factor:
+            height_ratios.append(0.5)
         spec = fig.add_gridspec(rows, 2, height_ratios=height_ratios, width_ratios=[1, 0.03])
 
         ax0 = fig.add_subplot(spec[0:2, 0])
@@ -192,7 +198,7 @@ class Network(SmartSim):
 
         if pos_input:
             foreground = colors.LinearSegmentedColormap.from_list('f', [(0, 0, 0, 0), (1, 1, 1, 1)], N=100)
-            matb = ax0.matshow(self.pos_input_log[index_start:index_end].T, aspect="auto", origin="lower",
+            matb = ax0.matshow(self.pos_input_log[index_start:index_end, :last_unit].T, aspect="auto", origin="lower",
                                extent=extent, cmap=foreground)
             c_map = colors.LinearSegmentedColormap.from_list('f', [(0, 0, 0, 1), (1, 1, 1, 1)], N=100)
             color_bar = fig.colorbar(mpl.cm.ScalarMappable(norm=matb.norm, cmap=c_map), cax=fig.add_subplot(spec[0, 1]))
@@ -205,14 +211,26 @@ class Network(SmartSim):
             ax1.set_ylabel("Theta")
             ax1.set_xlabel("Time (s)")
 
+        if speed_factor:
+            ax2 = fig.add_subplot(spec[2 + theta, 0], sharex=ax0)
+            time = np.arange(len(self.act_log)) * self.track.dt
+            ax2.plot(time, self.track.speed_factor_log)
+            max_v = max(max(self.track.speed_factor_log) - 1, 1 - min(self.track.speed_factor_log)) * 1.05
+            ax2.set_ylim(1 - max_v, 1 + max_v)
+            ax2.set_ylabel("Speed mult.")
+            ax2.set_xlabel("Time (s)")
+
         ax0.xaxis.set_ticks_position('bottom')
         ax0.set_xlim(*extent)
 
-    def plot_dynamics(self, t_start=0, t_end=None):
+    def plot_dynamics(self, t_start=0, t_end=None, apply_f=False):
         index_start = int(t_start / self.track.dt)
         index_end = int(t_end / self.track.dt) if t_end is not None else len(self.act_log)
 
-        act_log = np.array(self.act_log[index_start:index_end]).T
+        if apply_f:
+            act_log = np.array(self.act_out_log[index_start:index_end]).T
+        else:
+            act_log = np.array(self.act_log[index_start:index_end]).T
 
         foreground = colors.LinearSegmentedColormap.from_list('f', [(0, 0, 0, 0), (1, 1, 1, 1)], N=100)
         extent = (index_start * self.track.dt - self.track.dt / 2, index_end * self.track.dt - self.track.dt / 2,
@@ -258,10 +276,10 @@ class Network(SmartSim):
 
 if __name__ == "__main__":
     config = Config(identifier=1, variants={
-        # 'LinearTrack': 'OneLap',
+        'LinearTrack': 'OneLap',
         # 'LinearTrack': 'FixSpeed',
         'Network': 'Log'
-    })
+    }, pickle_instances=True)
     network = Network.current_instance(config)
 
     # network.track.plot_trajectory()
@@ -270,7 +288,7 @@ if __name__ == "__main__":
 
     # network.plot_rec_weights()
     # network.plot_activities(apply_f=0)
-    network.plot_dynamics(t_end=None)
-    network.plot_activities(apply_f=1, pos_input=1, theta=1, t_start=0)
+    network.plot_dynamics(t_start=0, t_end=None, apply_f=1)
+    # network.plot_activities(apply_f=1, pos_input=0, theta=0, speed_factor=1, t_start=0, last_unit=200)
 
     plt.show()
