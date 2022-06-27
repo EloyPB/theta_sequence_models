@@ -121,7 +121,7 @@ class PlaceFields(SmartSim):
             peak_index = self.field_peak_indices[field_num]
             bound_indices = self.field_bound_indices[field_num]
             speeds.append(np.nanmean(self.track.mean_speeds[bound_indices[0]:bound_indices[1] + 1]))
-            positions.append(self.field_peak_indices[field_num] * self.bin_size)
+            positions.append((self.field_peak_indices[field_num] + 0.5) * self.bin_size)
 
             if half_size:
                 sizes.append(self.size(peak_index, bound_indices, self.field_bounds_ok[field_num]))
@@ -145,26 +145,29 @@ class PlaceFields(SmartSim):
             ax.set_xlabel("Mean running speed (cm/s)")
             self.maybe_save_fig(fig, "size_vs_speed")
 
-    def density_vs_mean_speed(self, plot=True):
+    def density_vs_mean_speed(self, plot=True, first_to_last=True):
         peak_positions = (self.field_peak_indices[self.field_prominence_ok] + 0.5) * self.bin_size
-        starts = np.arange(0, self.track.length, self.dens_window_stride)
-        ends = np.arange(self.dens_window_size, self.track.length + self.dens_window_stride, self.dens_window_stride)
+        if first_to_last:
+            start = peak_positions.min()
+            end = peak_positions.max()
+        else:
+            start = 0
+            end = self.track.length
+        starts = np.arange(start, end, self.dens_window_stride)
+        ends = np.arange(self.dens_window_size, end, self.dens_window_stride)
 
         speeds = []
         densities = []
-        separations = []
 
         for start, end in zip(starts, ends):
             count = np.sum((start <= peak_positions) & (peak_positions < end))
             densities.append(count / self.dens_window_size)
-            separations.append(np.nan if count == 0 else self.dens_window_size / count)
             start_index = int(start / self.bin_size)
             end_index = int(end / self.bin_size)
             speeds.append(np.nanmean(self.track.mean_speeds[start_index:end_index+1]))
 
         self.maybe_pickle_results(speeds, "speeds", sub_folder="density")
         self.maybe_pickle_results(densities, "densities", sub_folder="density")
-        self.maybe_pickle_results(separations, "separations", sub_folder="density")
 
         if plot:
             fig, ax = plt.subplots()
@@ -172,6 +175,25 @@ class PlaceFields(SmartSim):
             ax.set_xlabel("Mean speed (cm/s)")
             ax.set_ylabel("Place field density (peaks/cm)")
             self.maybe_save_fig(fig, "density_vs_speed")
+
+    def separation_vs_mean_speed(self, plot=True):
+        peak_indices = np.sort(self.field_peak_indices[self.field_prominence_ok])
+        speeds = []
+        separations = []
+
+        for left, right in zip(peak_indices, peak_indices[1:]):
+            separations.append((right - left) * self.bin_size)
+            speeds.append(np.nanmean(self.track.mean_speeds[left:right+1]))
+
+        self.maybe_pickle_results(speeds, "speeds", sub_folder="separation")
+        self.maybe_pickle_results(separations, "separations", sub_folder="separation")
+
+        if plot:
+            fig, ax = plt.subplots()
+            ax.scatter(speeds, separations)
+            ax.set_xlabel("Mean speed (cm/s)")
+            ax.set_ylabel("Place field separation (cm)")
+            self.maybe_save_fig(fig, "separation_vs_speed")
 
 
 if __name__ == "__main__":

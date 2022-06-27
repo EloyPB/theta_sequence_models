@@ -106,7 +106,7 @@ class PhasePrecession(SmartSim):
                                              self.fields.field_peak_indices[not_nan]):
             speeds.append(np.nanmean(self.track.mean_speeds[bounds[0]:bounds[1]+1]))
             slopes.append(1/slope)
-            positions.append(peak_index * self.spatial_bin_size)
+            positions.append((peak_index + 0.5) * self.spatial_bin_size)
 
         self.maybe_pickle_results(speeds, "speeds")
         self.maybe_pickle_results(slopes, "slopes")
