@@ -40,7 +40,7 @@ class PhasePrecession(SmartSim):
         positive = occupancies > 0
         self.clouds[:, positive] = clouds[:, positive] / occupancies[positive]
 
-        phase_span = self.phase_bin_size * (self.num_phase_bins - 1)
+        phase_span = self.phase_bin_size * (self.num_phase_bins - 1) * 180 / np.pi
         for unit_num, (cloud, bounds, bounds_ok) in \
                 enumerate(zip(self.clouds, self.fields.field_bound_indices,
                               self.fields.field_bounds_ok)):
@@ -65,37 +65,63 @@ class PhasePrecession(SmartSim):
 
     def plot_cloud(self, unit):
         fig, ax = plt.subplots(1, 2, gridspec_kw={'width_ratios': (1, 0.5)}, sharey='row', figsize=(8, 4))
-        c_map = copy.copy(plt.cm.get_cmap('viridis'))
-        c_map.set_bad(color='white')
 
         bounds = self.fields.field_bound_indices[unit]
         fit_x = self.fields.bins_x[bounds[0]:bounds[1]+1]
         fit_x_rel = fit_x - self.fields.bins_x[bounds[0]]
         fit_y = self.intercepts[unit] + self.slopes[unit]*fit_x_rel
 
-        mat = ax[0].matshow(self.clouds[unit], aspect='auto', origin='lower', cmap=c_map,
-                            extent=(0, self.num_spatial_bins*self.spatial_bin_size, 0, 2*np.pi))
+        mat = ax[0].matshow(self.clouds[unit], aspect='auto', origin='lower',
+                            extent=(0, self.num_spatial_bins*self.spatial_bin_size, 0, 360))
         ax[0].plot(fit_x, fit_y, color='orange')
         ax[0].xaxis.set_ticks_position('bottom')
-        ax[0].set_ylabel("Phase (rad)")
+        ax[0].set_ylabel("Phase (deg)")
         ax[0].set_xlabel("Position (cm)")
 
         bar = fig.colorbar(mat, ax=ax[1])
         bar.set_label("Activation")
 
-        ax[1].matshow(self.clouds[unit, :, bounds[0]:bounds[1]+1], aspect='auto', origin='lower', cmap=c_map,
-                      extent=(bounds[0]*self.spatial_bin_size, (bounds[1]+1)*self.spatial_bin_size, 0, 2*np.pi))
+        ax[1].matshow(self.clouds[unit, :, bounds[0]:bounds[1]+1], aspect='auto', origin='lower',
+                      extent=(bounds[0]*self.spatial_bin_size, (bounds[1]+1)*self.spatial_bin_size, 0, 360))
         ax[1].xaxis.set_ticks_position('bottom')
         ax[1].set_xlabel("Position (cm)")
         ax[1].plot(fit_x, fit_y, color='orange')
 
-        ax[0].set_yticks([0, np.pi, 2*np.pi])
-        ax[0].set_yticklabels([0, r"$\pi$", r"$2\pi$"])
-        ax[0].set_ylim((0, 2*np.pi))
+        ax[0].set_yticks([0, 180, 360])
+        ax[0].set_ylim((0, 360))
 
         fig.tight_layout()
 
         self.maybe_save_fig(fig, f"phase precession {unit}")
+
+    def plot_clouds(self, units, fig_size=(4.8, 6)):
+        fig, ax = plt.subplots(len(units), 1, sharex='col', figsize=fig_size, constrained_layout=True)
+
+        c_map = copy.copy(plt.cm.get_cmap('viridis'))
+        c_map.set_bad(color='gray')
+
+        for row, unit in enumerate(units):
+            bounds = self.fields.field_bound_indices[unit]
+            fit_x = self.fields.bins_x[bounds[0]:bounds[1] + 1]
+            fit_x_rel = fit_x - self.fields.bins_x[bounds[0]]
+            fit_y = self.intercepts[unit] + self.slopes[unit] * fit_x_rel
+
+            mat = ax[row].matshow(self.clouds[unit], aspect='auto', origin='lower', cmap=c_map,
+                                  extent=(0, self.num_spatial_bins * self.spatial_bin_size, 0, 360))
+            ax[row].plot(fit_x, fit_y, color='orange')
+            ax[row].xaxis.set_ticks_position('bottom')
+            ax[row].set_ylabel("Phase (deg)")
+            bar = fig.colorbar(mat, ax=ax[row])
+            bar.set_label("Act.")
+
+            if row < len(units) - 1:
+                ax[row].tick_params(labelbottom=False)
+
+            ax[row].set_yticks([0, 180, 360])
+            ax[row].set_ylim((0, 360))
+
+        ax[-1].set_xlabel("Position (cm)")
+        self.maybe_save_fig(fig, "clouds")
 
     def slopes_vs_mean_speed(self, plot=True, colour_by_position=True):
         speeds = []
@@ -127,9 +153,12 @@ class PhasePrecession(SmartSim):
 
 
 if __name__ == "__main__":
-    pp = PhasePrecession.current_instance(Config(identifier=1, pickle_instances=True))
-    for unit in [40, 60, 80, 100, 120]:
-        pp.plot_cloud(unit)
+    pp = PhasePrecession.current_instance(Config(variants={'LinearTrack': 'ManyLaps'}, identifier=1,
+                                                 pickle_instances=True, save_figures=True, figure_format='pdf'))
+    # for unit in [40, 60, 80, 100, 120]:
+    #     pp.plot_cloud(unit)
     pp.slopes_vs_mean_speed()
+
+    pp.plot_clouds((40, 60, 80, 100, 120))
 
     plt.show()

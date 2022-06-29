@@ -46,22 +46,29 @@ class Decoder(SmartSim):
 
                 i += 1
 
-    def plot(self):
+    def plot(self, t_start=0, t_end=None):
         fig, ax = plt.subplots()
 
-        t_start = self.first_index * self.track.dt
-        t_end = self.network.theta_cycle_starts[-1] * self.track.dt
+        first_index = max(self.first_index, int(t_start / self.track.dt))
+        if t_end is None:
+            last_index = self.network.theta_cycle_starts[-1]
+        else:
+            last_index = min(self.network.theta_cycle_starts[-1], int(t_end / self.track.dt))
+
+        t_start = first_index * self.track.dt
+        t_end = last_index * self.track.dt
         extent = (t_start - self.track.dt/2, t_end - self.track.dt/2, 0, self.fields.num_bins * self.fields.bin_size)
 
         c_map = copy.copy(plt.cm.get_cmap('viridis'))
         c_map.set_bad(color='C7')
-        mat = ax.matshow(self.correlations.T, aspect='auto', origin='lower', extent=extent, cmap=c_map)
+        mat = ax.matshow(self.correlations[first_index-self.first_index:last_index-self.first_index].T,
+                         aspect='auto', origin='lower', extent=extent, cmap=c_map)
         ax.xaxis.set_ticks_position('bottom')
         c_bar = fig.colorbar(mat)
         c_bar.set_label("P.V. Correlation")
 
         t = np.arange(t_start, t_end, self.track.dt)
-        ax.plot(t, self.track.x_log[self.first_index:self.network.theta_cycle_starts[-1]], color='white')
+        ax.plot(t, self.track.x_log[first_index:last_index], color='white')
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Position (cm)")
         return fig, ax

@@ -51,12 +51,12 @@ class PlaceFields(SmartSim):
         if self.sigma > 0:
             self.activations = gaussian_filter1d(self.activations, sigma=self.sigma, mode='nearest')
 
-    def plot_activations(self):
-        fig, ax = plt.subplots()
+    def plot_activations(self, fig_size=(6.4, 4.8)):
+        fig, ax = plt.subplots(figsize=fig_size)
         c_map = copy.copy(plt.cm.get_cmap('viridis'))
         c_map.set_bad(color='white')
-        mat = ax.matshow(self.activations, aspect='auto', origin='lower', cmap=c_map,
-                         extent=(0, self.num_bins*self.bin_size, -0.5, self.last_unit-0.5))
+        mat = ax.matshow(self.activations, aspect='auto', cmap=c_map,
+                         extent=(0, self.num_bins*self.bin_size, self.last_unit-0.5, -0.5))
         ax.xaxis.set_ticks_position('bottom')
         ax.set_ylabel("Unit #")
         ax.set_xlabel("Position (cm)")
@@ -198,7 +198,7 @@ class PlaceFields(SmartSim):
 
 if __name__ == "__main__":
     pf = PlaceFields.current_instance(Config(identifier=1, pickle_instances=True))
-    pf.plot_activations()
+    pf.plot_activations(fig_size=(4, 4))
     pf.sizes_vs_mean_speed(colour_by_position=True)
     # pf.density_vs_mean_speed()
 
