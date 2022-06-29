@@ -17,7 +17,7 @@
   "pos_factor_concentration": 2,
   "pos_factor_phase": 90,
   "pos_sigmoid_gain": 12,
-  "pos_sigmoid_midpoint": 0.8,
+  "pos_sigmoid_midpoint": 0.7,
   "reset_indices": [0, 6],
   "reset_value": 1,
   "learning_rate": 0.00005,

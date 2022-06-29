@@ -3,7 +3,7 @@
   "ds": 1,
   "dt": 0.001,
   "num_features": 128,
-  "features_sigma_range": [2, 15],
+  "features_sigma_range": [2, 18],
   "speed_profile_points": [[0, 15], [100, 80], [200, 15]],
   "speed_factor_sigma": 2,
   "speed_factor_amplitude": 1,
