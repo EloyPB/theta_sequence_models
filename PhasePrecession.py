@@ -2,6 +2,7 @@ import copy
 import numpy as np
 from scipy import odr
 import matplotlib.pyplot as plt
+from matplotlib import ticker
 from PlaceFields import LinearTrack, Network, PlaceFields, SmartSim, Config
 
 
@@ -107,15 +108,19 @@ class PhasePrecession(SmartSim):
             fit_y = self.intercepts[unit] + self.slopes[unit] * fit_x_rel
 
             mat = ax[row].matshow(self.clouds[unit], aspect='auto', origin='lower', cmap=c_map,
-                                  extent=(0, self.num_spatial_bins * self.spatial_bin_size, 0, 360))
+                                  extent=(0, self.num_spatial_bins * self.spatial_bin_size, 0, 360), vmin=0, vmax=1)
             ax[row].plot(fit_x, fit_y, color='orange')
             ax[row].xaxis.set_ticks_position('bottom')
-            ax[row].set_ylabel("Phase (deg)")
-            bar = fig.colorbar(mat, ax=ax[row])
-            bar.set_label("Act.")
+            if row == len(units) // 2:
+                ax[row].set_ylabel("Phase (deg)")
 
             if row < len(units) - 1:
                 ax[row].tick_params(labelbottom=False)
+            else:
+                bar = fig.colorbar(mat, ax=ax[row])
+                bar.set_label("Act.")
+                # bar.locator = ticker.MultipleLocator(0.5)
+                # bar.update_ticks()
 
             ax[row].set_yticks([0, 180, 360])
             ax[row].set_ylim((0, 360))
@@ -153,6 +158,8 @@ class PhasePrecession(SmartSim):
 
 
 if __name__ == "__main__":
+    plt.rcParams.update({'font.size': 11})
+
     pp = PhasePrecession.current_instance(Config(variants={'LinearTrack': 'ManyLaps'}, identifier=1,
                                                  pickle_instances=True, save_figures=True, figure_format='pdf'))
     # for unit in [40, 60, 80, 100, 120]:

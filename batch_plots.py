@@ -11,6 +11,9 @@ from ThetaSweeps import ThetaSweeps
 
 # PLOT RESULTS
 
+plt.rcParams.update({'font.size': 11})
+
+
 def plot(name, class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path_y, c_label="", rel_path_c=None, s=18,
          alpha=1., fig_size=(4, 3.5), format='pdf'):
 

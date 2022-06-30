@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import colors
+import matplotlib.ticker as ticker
 from LinearTrack import LinearTrack
 from generic.smart_sim import Config, SmartSim
 from generic.timer import timer
@@ -175,8 +176,12 @@ class Network(SmartSim):
 
         if apply_f:
             act_log = self.act_out_log[index_start:index_end, first_unit:last_unit]
+            v_min = 0
+            v_max = 1
         else:
             act_log = self.act_log[index_start:index_end, first_unit:last_unit]
+            v_min = act_log.min()
+            v_max = act_log.max()
 
         extent = (index_start * self.track.dt - self.track.dt / 2, index_end * self.track.dt - self.track.dt / 2,
                   first_unit - 0.5, last_unit - 0.5)
@@ -189,32 +194,39 @@ class Network(SmartSim):
         spec = fig.add_gridspec(rows, 2, height_ratios=height_ratios, width_ratios=[1, 0.03])
 
         ax0 = fig.add_subplot(spec[0:2, 0])
-        mat = ax0.matshow(act_log.T, aspect="auto", origin="lower", extent=extent, cmap='viridis')
+        mat = ax0.matshow(act_log.T, aspect="auto", origin="lower", extent=extent, cmap='viridis',
+                          vmin=v_min, vmax=v_max)
 
         ax0.set_title("Network activities")
         ax0.set_ylabel("Unit #")
         ax0.set_xlabel("Time (s)")
         color_bar = plt.colorbar(mat, cax=fig.add_subplot(spec[1, 1]))
         color_bar.set_label("Activation")
+        color_bar.locator = ticker.MultipleLocator(0.5)
+        color_bar.update_ticks()
 
         if pos_input:
-            foreground = colors.LinearSegmentedColormap.from_list('f', [(0, 0, 0, 0), (1, 1, 1, 1)], N=100)
+            # foreground = colors.LinearSegmentedColormap.from_list('f', [(0, 0, 0, 0), (1, 1, 1, 1)], N=100)
+            foreground = colors.LinearSegmentedColormap.from_list('f', [(0, 0, 0, 0), (1, 0, 1, 1)], N=100)  # magenta
             matb = ax0.matshow(self.pos_input_log[index_start:index_end, first_unit:last_unit].T, aspect="auto", origin="lower",
-                               extent=extent, cmap=foreground)
-            c_map = colors.LinearSegmentedColormap.from_list('f', [(0, 0, 0, 1), (1, 1, 1, 1)], N=100)
-            color_bar = fig.colorbar(mpl.cm.ScalarMappable(norm=matb.norm, cmap=c_map), cax=fig.add_subplot(spec[0, 1]))
+                               extent=extent, cmap=foreground, vmin=0, vmax=1)
+            # c_map = colors.LinearSegmentedColormap.from_list('f', [(0, 0, 0, 1), (1, 1, 1, 1)], N=100)
+            # color_bar = fig.colorbar(mpl.cm.ScalarMappable(norm=matb.norm, cmap=c_map), cax=fig.add_subplot(spec[0, 1]))
+            color_bar = fig.colorbar(matb, cax=fig.add_subplot(spec[0, 1]))
             color_bar.set_label("Pos Input")
+            color_bar.locator = ticker.MultipleLocator(0.5)
+            color_bar.update_ticks()
 
         if theta:
             ax1 = fig.add_subplot(spec[2, 0], sharex=ax0)
-            time = np.arange(len(self.act_log)) * self.track.dt
+            time = np.arange(len(self.act_out_log)) * self.track.dt
             ax1.plot(time, self.theta_log)
             ax1.set_ylabel("Theta")
             ax1.set_xlabel("Time (s)")
 
         if speed:
             ax2 = fig.add_subplot(spec[2 + theta, 0], sharex=ax0)
-            time = np.arange(len(self.act_log)) * self.track.dt
+            time = np.arange(len(self.act_out_log)) * self.track.dt
             ax2.plot(time, self.track.speed_log)
             max_v = max(max(self.track.speed_log) - 1, 1 - min(self.track.speed_log)) * 1.05
             # ax2.set_ylim(1 - max_v, 1 + max_v)
@@ -235,8 +247,12 @@ class Network(SmartSim):
 
         if apply_f:
             act_log = np.array(self.act_out_log[index_start:index_end, first_unit:last_unit]).T
+            v_min = 0
+            v_max = 1
         else:
             act_log = np.array(self.act_log[index_start:index_end, first_unit:last_unit]).T
+            v_min = act_log.min()
+            v_max = act_log.max()
 
         foreground = colors.LinearSegmentedColormap.from_list('f', [(0, 0, 0, 0), (1, 1, 1, 1)], N=100)
         extent = (index_start * self.track.dt - self.track.dt / 2, index_end * self.track.dt - self.track.dt / 2,
@@ -246,30 +262,42 @@ class Network(SmartSim):
         spec = fig.add_gridspec(6, 2, height_ratios=[1, 1, 1, 1, 1, 1], width_ratios=[1, 0.03])
         c_map = 'viridis'
         ax0 = fig.add_subplot(spec[0:2, 0])
-        mat0 = ax0.matshow(act_log, aspect="auto", origin="lower", extent=extent, cmap=c_map)
-        mat0b = ax0.matshow(self.depression_log[index_start:index_end, first_unit:last_unit].T, aspect="auto", origin="lower",
-                            extent=extent, cmap=foreground)
+        mat0 = ax0.matshow(act_log, aspect="auto", origin="lower", extent=extent, cmap=c_map, vmin=v_min, vmax=v_max)
+        mat0b = ax0.matshow(self.depression_log[index_start:index_end, first_unit:last_unit].T, aspect="auto",
+                            origin="lower", extent=extent, cmap=foreground, vmin=0)
         bar0 = plt.colorbar(mat0, cax=fig.add_subplot(spec[0, 1]))
+        bar0.locator = ticker.MultipleLocator(0.5)
+        bar0.update_ticks()
         c_map_bar = colors.LinearSegmentedColormap.from_list('f', [(0, 0, 0, 1), (1, 1, 1, 1)], N=100)
         bar0b = fig.colorbar(mpl.cm.ScalarMappable(norm=mat0b.norm, cmap=c_map_bar), cax=fig.add_subplot(spec[1, 1]))
         bar0b.set_label("D")
+        bar0b.locator = ticker.MultipleLocator(0.3)
+        bar0b.update_ticks()
 
         ax1 = fig.add_subplot(spec[2:4, 0], sharex=ax0, sharey=ax0)
-        mat1 = ax1.matshow(act_log, aspect="auto", origin="lower", extent=extent, cmap=c_map)
+        mat1 = ax1.matshow(act_log, aspect="auto", origin="lower", extent=extent, cmap=c_map, vmin=v_min, vmax=v_max)
         mat1b = ax1.matshow(self.facilitation_log[index_start:index_end, first_unit:last_unit].T, aspect="auto", origin="lower",
                             extent=extent, cmap=foreground)
         bar1 = plt.colorbar(mat1, cax=fig.add_subplot(spec[2, 1]))
+        bar1.locator = ticker.MultipleLocator(0.5)
+        bar1.update_ticks()
         bar1b = fig.colorbar(mpl.cm.ScalarMappable(norm=mat1b.norm, cmap=c_map_bar), cax=fig.add_subplot(spec[3, 1]))
         bar1b.set_label("F")
+        bar1b.locator = ticker.MultipleLocator(0.2)
+        bar1b.update_ticks()
 
         ax2 = fig.add_subplot(spec[4:6, 0], sharex=ax0, sharey=ax0)
-        mat2 = ax2.matshow(act_log, aspect="auto", origin="lower", extent=extent, cmap=c_map)
+        mat2 = ax2.matshow(act_log, aspect="auto", origin="lower", extent=extent, cmap=c_map, vmin=v_min, vmax=v_max)
         mat2b = ax2.matshow(((1-self.depression_log[index_start:index_end, first_unit:last_unit])
                              * self.facilitation_log[index_start:index_end, first_unit:last_unit]).T,
                             aspect="auto", origin="lower", extent=extent, cmap=foreground)
         bar2 = plt.colorbar(mat2, cax=fig.add_subplot(spec[4, 1]))
+        bar2.locator = ticker.MultipleLocator(0.5)
+        bar2.update_ticks()
         bar2b = fig.colorbar(mpl.cm.ScalarMappable(norm=mat2b.norm, cmap=c_map_bar), cax=fig.add_subplot(spec[5, 1]))
         bar2b.set_label("(1-D) F")
+        bar2b.locator = ticker.MultipleLocator(0.05)
+        bar2b.update_ticks()
 
         ax0.set_ylabel("Unit #")
         ax0.xaxis.set_ticks_position('bottom')
@@ -285,6 +313,8 @@ class Network(SmartSim):
 
 
 if __name__ == "__main__":
+    plt.rcParams.update({'font.size': 11})
+
     config = Config(identifier=1, variants={
         # 'LinearTrack': 'OneLap',
         # 'LinearTrack': 'FixSpeed',
@@ -298,9 +328,17 @@ if __name__ == "__main__":
 
     # network.plot_rec_weights()
     # network.plot_activities(apply_f=0)
+
+    # # show facilitation and depression on a few runs at the beginning:
     # network.plot_dynamics(t_start=1.255, t_end=2.265, first_unit=28, last_unit=78, apply_f=1)
-    # network.plot_activities(apply_f=1, pos_input=0, theta=0, speed=1, t_start=1.255, t_end=2.265, first_unit=28, last_unit=78)
+
+    # # zoom in on one run at the beginning:
+    # network.plot_activities(apply_f=1, pos_input=0, theta=0, speed=1, t_start=1.255, t_end=2.265,
+    #                         first_unit=28, last_unit=78)
+
+    # # all runs:
     # network.plot_activities(apply_f=1, pos_input=0, theta=0, speed=1, last_unit=200, fig_size=(8, 4.8))
-    network.plot_activities(apply_f=1, pos_input=1, theta=0, speed=1, last_unit=155, t_start=139, t_end=145)
+    # zoom in on one run at the end:
+    network.plot_activities(apply_f=1, pos_input=1, theta=0, speed=1, last_unit=160, t_start=139.12, t_end=144.88)
 
     plt.show()

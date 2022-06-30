@@ -197,7 +197,10 @@ class PlaceFields(SmartSim):
 
 
 if __name__ == "__main__":
-    pf = PlaceFields.current_instance(Config(identifier=1, pickle_instances=True))
+    plt.rcParams.update({'font.size': 11})
+
+    pf = PlaceFields.current_instance(Config(identifier=1, pickle_instances=True,
+                                             save_figures=True, figure_format='pdf'))
     pf.plot_activations(fig_size=(4, 4))
     pf.sizes_vs_mean_speed(colour_by_position=True)
     # pf.density_vs_mean_speed()

@@ -15,14 +15,14 @@ def analyze(identifier):
 
     pp = PhasePrecession.current_instance(config)
     pp.fields.plot_activations(fig_size=(4, 4))
-    # pp.fields.sizes_vs_mean_speed()
-    # pp.fields.density_vs_mean_speed()
-    # pp.fields.separation_vs_mean_speed()
-    # pp.slopes_vs_mean_speed()
+    pp.fields.sizes_vs_mean_speed()
+    pp.fields.density_vs_mean_speed()
+    pp.fields.separation_vs_mean_speed()
+    pp.slopes_vs_mean_speed()
     del pp
 
-    # sweeps = ThetaSweeps.current_instance(config)
-    # sweeps.length_vs_mean_speed()
+    sweeps = ThetaSweeps.current_instance(config)
+    sweeps.length_vs_mean_speed()
 
 
 # RUN ANALYSES

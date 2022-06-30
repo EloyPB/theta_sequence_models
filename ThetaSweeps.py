@@ -94,9 +94,11 @@ class ThetaSweeps(SmartSim):
 
 
 if __name__ == "__main__":
+    plt.rcParams.update({'font.size': 11})
+
     sweeps = ThetaSweeps.current_instance(Config(identifier=1, pickle_instances=True, save_figures=True,
                                                  figure_format='png'))
-    sweeps.plot(t_start=150.55)
+    sweeps.plot(t_start=150.62)
     sweeps.length_vs_mean_speed()
 
     plt.show()
