@@ -147,7 +147,8 @@ class Network(SmartSim):
                     self.facilitation_log[index] = self.facilitation.copy()
 
                 if self.track.speed_log[index]:
-                    self.w_pos += learning_rate * pos_factor * (act_out * (act_out - pos_input))[np.newaxis].T * features
+                    # self.w_pos += learning_rate * pos_factor * (act_out * (act_out - pos_input))[np.newaxis].T * features
+                    self.w_pos += learning_rate * pos_factor * (act_out - pos_input)[np.newaxis].T * features
 
     def theta(self, index):
         self.theta_phase_log[index] = self.theta_phase_log[index - 1] + self.theta_phase_inc
@@ -288,7 +289,7 @@ if __name__ == "__main__":
         # 'LinearTrack': 'OneLap',
         # 'LinearTrack': 'FixSpeed',
         'Network': 'Log'
-    }, pickle_instances=True, save_figures=True)
+    }, pickle_instances=True, save_figures=1)
     network = Network.current_instance(config)
 
     # network.track.plot_trajectory()
@@ -299,6 +300,7 @@ if __name__ == "__main__":
     # network.plot_activities(apply_f=0)
     # network.plot_dynamics(t_start=1.255, t_end=2.265, first_unit=28, last_unit=78, apply_f=1)
     # network.plot_activities(apply_f=1, pos_input=0, theta=0, speed=1, t_start=1.255, t_end=2.265, first_unit=28, last_unit=78)
-    network.plot_activities(apply_f=1, pos_input=0, theta=0, speed=1, last_unit=200, fig_size=(8, 4.8))
+    # network.plot_activities(apply_f=1, pos_input=0, theta=0, speed=1, last_unit=200, fig_size=(8, 4.8))
+    network.plot_activities(apply_f=1, pos_input=1, theta=0, speed=1, last_unit=155, t_start=139, t_end=145)
 
     plt.show()

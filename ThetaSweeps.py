@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.stats import linregress
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 from generic.smart_sim import Config, SmartSim
 from Decoder import Decoder
 
@@ -51,16 +52,24 @@ class ThetaSweeps(SmartSim):
             self.end_indices.append(end - np.argmax(ok[::-1]))
             self.lengths.append(fit.slope * (self.end_indices[-1] - self.start_indices[-1] - 1) * self.fields.bin_size)
 
-    def plot(self):
-        fig, ax = self.decoder.plot()
+    def plot(self, t_start=0, t_end=None):
+        fig, ax = self.decoder.plot(t_start, t_end)
         fit_x = np.arange(self.network.theta_cycle_steps)
+        first_index = int(t_start / self.track.dt)
+        last_index = self.network.theta_cycle_starts[-1]
         for fit_start, start_index, end_index, slope, intercept \
                 in zip(self.fit_starts, self.start_indices, self.end_indices, self.slopes, self.intercepts):
-            x = np.arange(start_index, end_index) * self.track.dt
+            if start_index > first_index and end_index < last_index:
+                x = np.arange(start_index, end_index) * self.track.dt
 
-            rel_start = start_index - fit_start
-            rel_end = end_index - fit_start
-            ax.plot(x, (fit_x * slope + intercept)[rel_start:rel_end]*self.fields.bin_size, color='k')
+                rel_start = start_index - fit_start
+                rel_end = end_index - fit_start
+                ax.plot(x, (fit_x * slope + intercept)[rel_start:rel_end]*self.fields.bin_size, color='k')
+
+        custom_lines = [Line2D([0], [0], color='white'),
+                        Line2D([0], [0], color='black')]
+        ax.legend(custom_lines, ['actual pos.', 'decoded pos.'], loc="lower right")
+        self.maybe_save_fig(fig, "sweeps", dpi=500)
 
     def length_vs_mean_speed(self, plot=True):
         speeds = []
@@ -70,22 +79,24 @@ class ThetaSweeps(SmartSim):
             positions.append(start_pos)
             speeds.append(self.track.mean_speeds[int(start_pos/self.fields.bin_size)])
 
-        fig, ax = plt.subplots()
-        sc = ax.scatter(speeds, self.lengths, c=positions)
-        c_bar = fig.colorbar(sc)
-        c_bar.set_label("Position (cm)")
-        ax.set_xlabel("Mean speed (cm/s)")
-        ax.set_ylabel("Theta sweep length (cm)")
+        if plot:
+            fig, ax = plt.subplots()
+            sc = ax.scatter(speeds, self.lengths, c=positions)
+            c_bar = fig.colorbar(sc)
+            c_bar.set_label("Position (cm)")
+            ax.set_xlabel("Mean speed (cm/s)")
+            ax.set_ylabel("Theta sweep length (cm)")
 
-        self.maybe_save_fig(fig, "length_vs_mean_speed")
-        self.maybe_pickle_results(speeds, "speeds")
-        self.maybe_pickle_results(self.lengths, "lengths")
-        self.maybe_pickle_results(positions, "positions")
+            self.maybe_save_fig(fig, "length_vs_mean_speed")
+            self.maybe_pickle_results(speeds, "speeds")
+            self.maybe_pickle_results(self.lengths, "lengths")
+            self.maybe_pickle_results(positions, "positions")
 
 
 if __name__ == "__main__":
-    sweeps = ThetaSweeps.current_instance(Config(identifier=1, pickle_instances=True))
-    sweeps.plot()
+    sweeps = ThetaSweeps.current_instance(Config(identifier=1, pickle_instances=True, save_figures=True,
+                                                 figure_format='png'))
+    sweeps.plot(t_start=150.55)
     sweeps.length_vs_mean_speed()
 
     plt.show()
