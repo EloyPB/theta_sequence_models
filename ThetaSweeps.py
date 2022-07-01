@@ -56,7 +56,10 @@ class ThetaSweeps(SmartSim):
         fig, ax = self.decoder.plot(t_start, t_end)
         fit_x = np.arange(self.network.theta_cycle_steps)
         first_index = int(t_start / self.track.dt)
-        last_index = self.network.theta_cycle_starts[-1]
+        if t_end is None:
+            last_index = self.network.theta_cycle_starts[-1]
+        else:
+            last_index = int(t_end / self.track.dt)
         for fit_start, start_index, end_index, slope, intercept \
                 in zip(self.fit_starts, self.start_indices, self.end_indices, self.slopes, self.intercepts):
             if start_index > first_index and end_index < last_index:
@@ -68,7 +71,7 @@ class ThetaSweeps(SmartSim):
 
         custom_lines = [Line2D([0], [0], color='white'),
                         Line2D([0], [0], color='black')]
-        ax.legend(custom_lines, ['actual pos.', 'decoded pos.'], loc="lower right")
+        ax.legend(custom_lines, ['actual pos.', 'decoded pos.'], loc="upper left")
         self.maybe_save_fig(fig, "sweeps", dpi=500)
 
     def length_vs_mean_speed(self, plot=True):
@@ -96,9 +99,10 @@ class ThetaSweeps(SmartSim):
 if __name__ == "__main__":
     plt.rcParams.update({'font.size': 11})
 
-    sweeps = ThetaSweeps.current_instance(Config(identifier=1, pickle_instances=True, save_figures=True,
+    sweeps = ThetaSweeps.current_instance(Config(identifier=1, pickle_instances=True, save_figures=False,
                                                  figure_format='png'))
     sweeps.plot(t_start=150.62)
+    # sweeps.plot(t_start=151.256, t_end=151.632)
     sweeps.length_vs_mean_speed()
 
     plt.show()

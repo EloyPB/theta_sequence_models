@@ -67,7 +67,7 @@ class Decoder(SmartSim):
         c_bar = fig.colorbar(mat)
         c_bar.set_label("P.V. Correlation")
 
-        t = np.arange(t_start, t_end, self.track.dt)
+        t = np.arange(first_index, last_index) * self.track.dt
         ax.plot(t, self.track.x_log[first_index:last_index], color='white')
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Position (cm)")

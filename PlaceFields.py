@@ -30,14 +30,10 @@ class PlaceFields(SmartSim):
         self.dens_window_stride = dens_window_stride
 
         self.activations = np.full((self.last_unit, self.num_bins), np.nan)
-        self.field_peak_indices = np.full(self.last_unit, np.nan, dtype=int)
-        self.field_bound_indices = np.full((self.last_unit, 2), np.nan, dtype=int)
-        self.field_bounds_ok = np.full((self.last_unit, 2), False)
-        self.field_prominence_ok = np.full(self.last_unit, False)
-        self.field_sizes = np.full(self.last_unit, np.nan)
 
         self.compute_activations()
-        self.compute_fields()
+        self.field_peak_indices, self.field_bound_indices, self.field_bounds_ok, self.field_prominence_ok = \
+            self.compute_fields(self.activations)
 
     def compute_activations(self):
         occupancies = np.zeros(self.num_bins, dtype=int)
@@ -65,33 +61,38 @@ class PlaceFields(SmartSim):
         fig.tight_layout()
         self.maybe_save_fig(fig, "place fields")
 
-    def compute_fields(self):
-        for field_num, activations in enumerate(self.activations):
+    def compute_fields(self, activations):
+        peak_indices = np.full(self.last_unit, np.nan, dtype=int)
+        bound_indices = np.full((self.last_unit, 2), np.nan, dtype=int)
+        bounds_ok = np.full((self.last_unit, 2), False)
+        prominence_ok = np.full(self.last_unit, False)
+
+        for field_num, activations in enumerate(activations):
             peak_index = np.argmax(activations)
-            if activations[peak_index] < self.min_peak:
-                continue
+            if activations[peak_index] >= self.min_peak:
+                peak_indices[field_num] = peak_index
+                threshold = activations[peak_index] * self.threshold
+                below_threshold = activations < threshold
 
-            self.field_peak_indices[field_num] = peak_index
-            threshold = activations[peak_index] * self.threshold
-            below_threshold = activations < threshold
+                if np.sum(below_threshold[peak_index:]):
+                    right_index = peak_index + np.argmax(below_threshold[peak_index:])
+                else:
+                    right_index = self.num_bins - 1
 
-            if np.sum(below_threshold[peak_index:]):
-                right_index = peak_index + np.argmax(below_threshold[peak_index:])
-            else:
-                right_index = self.num_bins - 1
+                if np.sum(below_threshold[:peak_index]):
+                    left_index = peak_index - np.argmax(below_threshold[:peak_index + 1][::-1])
+                else:
+                    left_index = 0
 
-            if np.sum(below_threshold[:peak_index]):
-                left_index = peak_index - np.argmax(below_threshold[:peak_index + 1][::-1])
-            else:
-                left_index = 0
+                bound_indices[field_num] = (left_index, right_index)
+                bounds_ok[field_num] = below_threshold[bound_indices[field_num]]
 
-            self.field_bound_indices[field_num] = (left_index, right_index)
-            self.field_bounds_ok[field_num] = below_threshold[self.field_bound_indices[field_num]]
+                prominence_threshold = activations[peak_index] * (1 - self.prominence_threshold)
+                prominence_ok[field_num] \
+                    = ((activations[left_index:peak_index] <= prominence_threshold).any() and
+                       (activations[peak_index:right_index + 1] < prominence_threshold).any())
 
-            prominence_threshold = activations[peak_index] * (1 - self.prominence_threshold)
-            self.field_prominence_ok[field_num] \
-                = ((activations[left_index:peak_index] <= prominence_threshold).any() and
-                   (activations[peak_index:right_index + 1] < prominence_threshold).any())
+        return peak_indices, bound_indices, bounds_ok, prominence_ok
 
     def size(self, peak_index, bound_indices, bounds_ok):
         if all(bounds_ok):
@@ -124,9 +125,9 @@ class PlaceFields(SmartSim):
             positions.append((self.field_peak_indices[field_num] + 0.5) * self.bin_size)
 
             if half_size:
-                sizes.append(self.size(peak_index, bound_indices, self.field_bounds_ok[field_num]))
-            else:
                 sizes.append(self.half_size(peak_index, bound_indices, self.field_bounds_ok[field_num]))
+            else:
+                sizes.append(self.size(peak_index, bound_indices, self.field_bounds_ok[field_num]))
 
         self.maybe_pickle_results(speeds, "speeds")
         self.maybe_pickle_results(sizes, "sizes")
@@ -177,6 +178,8 @@ class PlaceFields(SmartSim):
             self.maybe_save_fig(fig, "density_vs_speed")
 
     def separation_vs_mean_speed(self, plot=True):
+        """Distance between neighbouring peaks.
+        """
         peak_indices = np.sort(self.field_peak_indices[self.field_prominence_ok])
         speeds = []
         separations = []
@@ -195,14 +198,69 @@ class PlaceFields(SmartSim):
             ax.set_ylabel("Place field separation (cm)")
             self.maybe_save_fig(fig, "separation_vs_speed")
 
+    def true_field(self, unit, fig_size=(6.4, 4.8)):
+        occupancies = np.zeros(self.num_bins, dtype=int)
+        activations = np.zeros(self.num_bins)
+
+        for t_step in range(self.first_t_step, len(self.track.x_log)):
+            bin_num = int(self.track.x_log[t_step] / self.bin_size)
+            occupancies[bin_num] += 1
+            activations[bin_num] += self.network.pos_input_log[t_step][unit]
+
+        activations = gaussian_filter1d(activations / occupancies, sigma=self.sigma, mode='nearest')
+
+        fig, ax = plt.subplots(figsize=fig_size, constrained_layout=True)
+        ax.axvline(self.bins_x[np.argmax(activations)], color='C1', linestyle='dashed')
+        ax.axvline(self.bins_x[np.argmax(self.activations[unit])], color='C0', linestyle='dashed')
+        ax.plot(self.bins_x, self.activations[unit], label='measured')
+        ax.plot(self.bins_x, activations, label='spatial input')
+        ax.set_xlabel("Position (cm)")
+        ax.set_ylabel("Activation")
+        ax.spines.right.set_visible(False)
+        ax.spines.top.set_visible(False)
+        ax.legend(loc='upper right')
+        self.maybe_save_fig(fig, "true_field")
+
+    def fast_and_slow_sizes(self):
+        occupancies = np.zeros((2, self.num_bins), dtype=int) + 0.1
+        activations = np.zeros((self.last_unit, 2, self.num_bins))
+        for t_step in range(self.first_t_step, len(self.track.x_log)):
+            bin_num = int(self.track.x_log[t_step] / self.bin_size)
+            speed_factor = self.track.speed_factor_log[t_step]
+            i = int(speed_factor > 1)
+            occupancies[i, bin_num] += 1
+            activations[:, i, bin_num] += self.network.act_out_log[t_step][:self.last_unit]
+        activations /= occupancies
+
+        sizes = np.full((2, self.last_unit), 20)
+        for i in range(2):
+            if self.sigma > 0:
+                activations[:, i] = gaussian_filter1d(activations[:, i], sigma=self.sigma, mode='nearest')
+            peak_indices, bound_indices, bounds_ok, prominence_ok = self.compute_fields(activations[:, i])
+            for unit_num in range(self.last_unit):
+                if prominence_ok[unit_num]:
+                    sizes[i, unit_num] = self.size(peak_indices[unit_num], bound_indices[unit_num], bounds_ok[unit_num])
+
+        fig, ax = plt.subplots()
+        ax.plot(sizes, color='C7')
+        ax.plot(sizes, 'o', color='k')
+        ax.set_xticks((0, 1))
+        ax.set_xticklabels(('Slow', 'Fast'))
+        ax.set_ylabel("Place field size (cm)")
+
 
 if __name__ == "__main__":
     plt.rcParams.update({'font.size': 11})
 
-    pf = PlaceFields.current_instance(Config(identifier=1, pickle_instances=True,
-                                             save_figures=True, figure_format='pdf'))
-    pf.plot_activations(fig_size=(4, 4))
+    variants = {'LinearTrack': 'Many', 'Network': 'LogPosInput'}
+    pf = PlaceFields.current_instance(Config(identifier=1, variants=variants, pickle_instances=True,
+                                             save_figures=False, figure_format='pdf'))
+    # pf.plot_activations(fig_size=(4, 4))
     pf.sizes_vs_mean_speed(colour_by_position=True)
     # pf.density_vs_mean_speed()
+
+    # pf.true_field(unit=68, fig_size=(4, 2))
+
+    pf.fast_and_slow_sizes()
 
     plt.show()

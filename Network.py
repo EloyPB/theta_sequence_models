@@ -110,8 +110,6 @@ class Network(SmartSim):
 
             for index in range(lap_start_index, last_lap_index):
                 theta = self.theta(index)
-                if self.log_theta:
-                    self.theta_log[index] = theta
 
                 pos_factor = (np.exp(self.pos_factor_concentration
                                      * np.cos(self.theta_phase_log[index] - self.pos_factor_phase))
@@ -157,8 +155,11 @@ class Network(SmartSim):
             self.theta_phase_log[index] -= TWO_PI
             self.theta_cycle_starts.append(index)
 
-        return (-np.exp(self.theta_concentration * np.cos(self.theta_phase_log[index]))
-                * self.theta_multiplier + self.theta_max)
+        theta = (-np.exp(self.theta_concentration * np.cos(self.theta_phase_log[index]))
+                 * self.theta_multiplier + self.theta_max)
+        if self.log_theta:
+            self.theta_log[index] = theta
+        return theta
 
     def f_act(self, x):
         return 1 / (1 + np.exp(-self.act_sigmoid_gain * (x - self.act_sigmoid_midpoint)))
@@ -311,15 +312,30 @@ class Network(SmartSim):
 
         self.maybe_save_fig(fig, "dynamics", dpi=500)
 
+    def plot_theta_and_pos_factor(self, cycles=2, num_points=1000, fig_size=(4.8, 2.5)):
+        time = np.linspace(0, cycles/8, num_points)
+        theta = 2 * np.pi * 8 * time
+        theta_inh = -np.exp(self.theta_concentration * np.cos(theta)) * self.theta_multiplier + self.theta_max
+        pos_factor = (np.exp(self.pos_factor_concentration * np.cos(theta - self.pos_factor_phase))
+                      / np.exp(self.pos_factor_concentration))
+        fig, ax = plt.subplots(figsize=fig_size, constrained_layout=True)
+        for cycle in range(cycles + 1):
+            ax.axvline(cycle / 8, color='gray', linestyle='dashed')
+        ax.plot(time, theta_inh, label=r"$i_{\theta}$")
+        ax.plot(time, pos_factor, color='k', label=r"$\beta_{\theta}$")
+        ax.set_xlabel("Time (s)")
+        ax.legend(ncol=2)
+        self.maybe_save_fig(fig, "components")
+
 
 if __name__ == "__main__":
     plt.rcParams.update({'font.size': 11})
 
     config = Config(identifier=1, variants={
-        # 'LinearTrack': 'OneLap',
+        'LinearTrack': 'OneLap',
         # 'LinearTrack': 'FixSpeed',
         'Network': 'Log'
-    }, pickle_instances=True, save_figures=1)
+    }, pickle_instances=True, save_figures=1, figure_format='pdf')
     network = Network.current_instance(config)
 
     # network.track.plot_trajectory()
@@ -339,6 +355,7 @@ if __name__ == "__main__":
     # # all runs:
     # network.plot_activities(apply_f=1, pos_input=0, theta=0, speed=1, last_unit=200, fig_size=(8, 4.8))
     # zoom in on one run at the end:
-    network.plot_activities(apply_f=1, pos_input=1, theta=0, speed=1, last_unit=160, t_start=139.12, t_end=144.88)
+    # network.plot_activities(apply_f=1, pos_input=1, theta=0, speed=1, first_unit=34, last_unit=84, t_start=140, t_end=141.015)
 
+    network.plot_theta_and_pos_factor(fig_size=(4, 2))
     plt.show()
