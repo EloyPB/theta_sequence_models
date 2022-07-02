@@ -221,7 +221,7 @@ class PlaceFields(SmartSim):
         ax.legend(loc='upper right')
         self.maybe_save_fig(fig, "true_field")
 
-    def fast_and_slow_sizes(self):
+    def slow_and_fast_sizes(self, plot=True):
         occupancies = np.zeros((2, self.num_bins), dtype=int) + 0.1
         activations = np.zeros((self.last_unit, 2, self.num_bins))
         for t_step in range(self.first_t_step, len(self.track.x_log)):
@@ -241,12 +241,16 @@ class PlaceFields(SmartSim):
                 if prominence_ok[unit_num]:
                     sizes[i, unit_num] = self.size(peak_indices[unit_num], bound_indices[unit_num], bounds_ok[unit_num])
 
-        fig, ax = plt.subplots()
-        ax.plot(sizes, color='C7')
-        ax.plot(sizes, 'o', color='k')
-        ax.set_xticks((0, 1))
-        ax.set_xticklabels(('Slow', 'Fast'))
-        ax.set_ylabel("Place field size (cm)")
+        self.maybe_pickle_results(sizes, "slow_and_fast_sizes")
+
+        if plot:
+            fig, ax = plt.subplots()
+            ax.plot(sizes, color='C7')
+            ax.plot(sizes, 'o', color='k')
+            ax.set_xticks((0, 1))
+            ax.set_xticklabels(('Slow', 'Fast'))
+            ax.set_ylabel("Place field size (cm)")
+            self.maybe_save_fig(fig, "slow_and_fast")
 
 
 if __name__ == "__main__":

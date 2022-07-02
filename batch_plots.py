@@ -1,6 +1,7 @@
 import os
 from typing import Type
 import pickle
+import numpy as np
 import matplotlib.pyplot as plt
 from generic.smart_sim import SmartSim
 from batch_config import *
@@ -47,22 +48,43 @@ def plot(name, class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path
     fig.savefig(f"{figures_path}/ALL/{name}.{format}", dpi=400)
 
 
+def plot_speed_increments(name, class_def: Type[SmartSim], y_label, rel_path_y):
+    all_increments = []
+    for identifier in range(NUM_RUNS):
+        path = class_def.complete_path(pickles_path, str(identifier), variants)
+
+        with open(f"{path}{rel_path_y}", 'rb') as f:
+            y = pickle.load(f)
+
+        increments = y[1] - y[0]
+        all_increments += increments[~np.isnan(increments)].tolist()
+
+    fig, ax = plt.subplots()
+    ax.plot(np.random.random(len(all_increments)), all_increments, 'o')
+    ax.axhline(np.mean(all_increments), color='k')
+    ax.set_ylabel(y_label)
+    max_v = max(max(all_increments), -min(all_increments)) * 1.05
+    ax.set_ylim((-max_v, max_v))
+
+
+
 path = f"{figures_path}/ALL"
 if not os.path.exists(path):
     os.makedirs(path)
 
 x_label = "Mean speed (cm/s)"
 
-plot("sizes", PlaceFields, x_label, "speeds", "Place field size (cm)", "sizes", "Position (cm)", "positions")
-plot("densities", PlaceFields, x_label, "density/speeds", "Place field density (peaks/cm)", "density/densities",
-     alpha=0.5)
+# plot("sizes", PlaceFields, x_label, "speeds", "Place field size (cm)", "sizes", "Position (cm)", "positions")
+# plot("densities", PlaceFields, x_label, "density/speeds", "Place field density (peaks/cm)", "density/densities",
+#      alpha=0.5)
 # plot("separations", PlaceFields, x_label, "separation/speeds", "Place field separation (cm)",
 #      "separation/separations")
+plot_speed_increments("size_increments", PlaceFields, r"$\Delta$ Place field size (cm)", "slow_and_fast_sizes")
 
-plot("slopes", PhasePrecession, x_label, "speeds", "Inverse phase precession slope (cm/deg)", "slopes",
-     "Position (cm)", "positions")
-
-plot("sweeps", ThetaSweeps, x_label, "speeds", "Theta sweep length (cm)", "lengths", "Position (cm)", "positions",
-     s=10, format='png')
+# plot("slopes", PhasePrecession, x_label, "speeds", "Inverse phase precession slope (cm/deg)", "slopes",
+#      "Position (cm)", "positions")
+#
+# plot("sweeps", ThetaSweeps, x_label, "speeds", "Theta sweep length (cm)", "lengths", "Position (cm)", "positions",
+#      s=10, format='png')
 
 plt.show()
