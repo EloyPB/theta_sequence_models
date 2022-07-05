@@ -66,6 +66,15 @@ def plot_speed_increments(name, class_def: Type[SmartSim], y_label, rel_path_y):
     max_v = max(max(all_increments), -min(all_increments)) * 1.05
     ax.set_ylim((-max_v, max_v))
 
+    fig, ax = plt.subplots(figsize=(4, 2), constrained_layout=True)
+    last_edge = max(-(min(all_increments) - 1), max(all_increments) + 1)
+    ax.hist(all_increments, bins=np.arange(-last_edge, last_edge + 1, 2), density=True)
+    ax.set_ylabel("Proportion")
+    ax.set_xlabel("Place field size at fast inst. speed minus\n"
+                  "place field size at slow inst. speed (cm)")
+
+
+
 
 
 path = f"{figures_path}/ALL"
