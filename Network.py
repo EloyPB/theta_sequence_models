@@ -335,7 +335,7 @@ if __name__ == "__main__":
         'LinearTrack': 'OneLap',
         # 'LinearTrack': 'FixSpeed',
         'Network': 'Log'
-    }, pickle_instances=True, save_figures=1, figure_format='pdf')
+    }, pickle_instances=True, save_figures=True, figure_format='pdf')
     network = Network.current_instance(config)
 
     # network.track.plot_trajectory()
