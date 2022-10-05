@@ -111,7 +111,7 @@ class PlaceFields(SmartSim):
             bins = abs(peak_index - bound_index)
         return bins * self.bin_size
 
-    def sizes_vs_mean_speed(self, half_size=False, plot=True, colour_by_position=True):
+    def sizes_vs_mean_speed(self, half_size=False, plot=False, colour_by_position=True):
         speeds = []
         sizes = []
         positions = []
@@ -147,7 +147,7 @@ class PlaceFields(SmartSim):
             ax.set_xlabel("Mean running speed (cm/s)")
             self.maybe_save_fig(fig, "size_vs_speed")
 
-    def density_vs_mean_speed(self, plot=True, first_to_last=True):
+    def density_vs_mean_speed(self, plot=False, first_to_last=True):
         peak_positions = (self.field_peak_indices[self.field_prominence_ok] + 0.5) * self.bin_size
         if first_to_last:
             start = peak_positions.min()
@@ -178,7 +178,7 @@ class PlaceFields(SmartSim):
             ax.set_ylabel("Place field density (peaks/cm)")
             self.maybe_save_fig(fig, "density_vs_speed")
 
-    def separation_vs_mean_speed(self, plot=True):
+    def separation_vs_mean_speed(self, plot=False):
         """Distance between neighbouring peaks.
         """
         peak_indices = np.sort(self.field_peak_indices[self.field_prominence_ok])
@@ -226,7 +226,10 @@ class PlaceFields(SmartSim):
         ax.legend(loc='upper right')
         self.maybe_save_fig(fig, "true_field")
 
-    def true_field_shifts(self):
+    def true_field_shifts(self, plot=False):
+        if np.isnan(self.pos_activations).all():
+            self.compute_true_fields()
+
         field_nums = []
         speeds = []
         measured_peaks = []
@@ -243,20 +246,26 @@ class PlaceFields(SmartSim):
             measured_peaks.append((peak_index + 0.5) * self.bin_size)
             true_peaks.append((np.argmax(self.pos_activations[field_num]) + 0.5) * self.bin_size)
 
-        fig, ax = plt.subplots(1, 2, figsize=(8, 4), constrained_layout=True)
-        ax[0].scatter(measured_peaks, field_nums, label='measured')
-        ax[0].scatter(true_peaks, field_nums, label='spatial input')
-        ax[0].set_ylabel("Place field #")
-        ax[0].set_xlabel("Peak position (cm)")
-        ax[0].legend()
+        shifts = [m - t for m, t in zip(measured_peaks, true_peaks)]
+        self.maybe_pickle_results(shifts, "shifts", sub_folder="shifts")
+        self.maybe_pickle_results(speeds, "speeds", sub_folder="shifts")
+        self.maybe_pickle_results(measured_peaks, "positions", sub_folder="shifts")
 
-        sc = ax[1].scatter(speeds, np.array(measured_peaks) - np.array(true_peaks), c=measured_peaks)
-        ax[1].set_ylabel("Peak shift (cm)")
-        ax[1].set_xlabel("Mean speed (cm/s)")
-        bar = fig.colorbar(sc)
-        bar.set_label("Peak position (cm)")
+        if plot:
+            fig, ax = plt.subplots(1, 2, figsize=(8, 4), constrained_layout=True)
+            ax[0].scatter(measured_peaks, field_nums, label='measured')
+            ax[0].scatter(true_peaks, field_nums, label='spatial input')
+            ax[0].set_ylabel("Place field #")
+            ax[0].set_xlabel("Peak position (cm)")
+            ax[0].legend()
 
-    def slow_and_fast_sizes(self, plot=True):
+            sc = ax[1].scatter(speeds, shifts, c=measured_peaks)
+            ax[1].set_ylabel("Peak shift (cm)")
+            ax[1].set_xlabel("Mean speed (cm/s)")
+            bar = fig.colorbar(sc)
+            bar.set_label("Peak position (cm)")
+
+    def slow_and_fast_sizes(self, plot=False):
         occupancies = np.zeros((2, self.num_bins), dtype=int) + 0.1
         activations = np.zeros((self.last_unit, 2, self.num_bins))
         for t_step in range(self.first_t_step, len(self.track.x_log)):
@@ -303,7 +312,7 @@ if __name__ == "__main__":
 
     pf.compute_true_fields()
     # pf.plot_true_field(unit=20)
-    pf.true_field_shifts()
+    pf.true_field_shifts(plot=True)
 
     # pf.slow_and_fast_sizes()
 

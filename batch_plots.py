@@ -3,6 +3,7 @@ from typing import Type
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 from generic.smart_sim import SmartSim
 from batch_config import *
 from PlaceFields import PlaceFields
@@ -48,7 +49,7 @@ def plot(name, class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path
     fig.savefig(f"{figures_path}/ALL/{name}.{format}", dpi=400)
 
 
-def plot_speed_increments(name, class_def: Type[SmartSim], y_label, rel_path_y):
+def plot_speed_increments(name, class_def: Type[SmartSim], y_label, rel_path_y, format='pdf'):
     all_increments = []
     for identifier in range(NUM_RUNS):
         path = class_def.complete_path(pickles_path, str(identifier), variants)
@@ -76,6 +77,8 @@ def plot_speed_increments(name, class_def: Type[SmartSim], y_label, rel_path_y):
     ax.spines.right.set_visible(False)
     ax.spines.top.set_visible(False)
 
+    fig.savefig(f"{figures_path}/ALL/{name}.{format}", dpi=400)
+
 
 
 path = f"{figures_path}/ALL"
@@ -89,6 +92,8 @@ x_label = "Mean speed (cm/s)"
 #      alpha=0.5)
 # plot("separations", PlaceFields, x_label, "separation/speeds", "Place field separation (cm)",
 #      "separation/separations")
+plot("shifts", PlaceFields, x_label, "shifts/speeds", "Place field peak shift (cm)", "shifts/shifts", "Position (cm)",
+     "shifts/positions")
 plot_speed_increments("size_increments", PlaceFields, r"$\Delta$ Place field size (cm)", "slow_and_fast_sizes")
 
 # plot("slopes", PhasePrecession, x_label, "speeds", "Inverse phase precession slope (cm/deg)", "slopes",
