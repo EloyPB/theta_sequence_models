@@ -3,6 +3,9 @@ from scipy.stats import linregress
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from generic.smart_sim import Config, SmartSim
+from LinearTrack import LinearTrack
+from Network import Network
+from PlaceFields import PlaceFields
 from Decoder import Decoder
 
 
@@ -12,12 +15,16 @@ class ThetaSweeps(SmartSim):
     def __init__(self, min_fraction_ok, side_portion, config=Config(), d={}):
         SmartSim.__init__(self, config, d)
         self.decoder: Decoder = d['Decoder']
-        self.fields = self.decoder.fields
-        self.network = self.decoder.network
-        self.track = self.network.track
+        self.fields: PlaceFields = self.decoder.fields
+        self.network: Network = self.decoder.network
+        self.track: LinearTrack = self.network.track
 
         self.min_steps_ok = self.network.theta_cycle_steps * min_fraction_ok
         self.side_steps = int(round(self.network.theta_cycle_steps * side_portion))
+
+        self.trajectory_starts = []
+        self.trajectory_ends = []
+        self.real_positions = []
 
         self.slopes = []
         self.intercepts = []
@@ -49,9 +56,15 @@ class ThetaSweeps(SmartSim):
             self.slopes.append(fit.slope)
             self.intercepts.append(fit.intercept)
             self.fit_starts.append(start)
-            self.start_indices.append(start + np.argmax(ok))
-            self.end_indices.append(end - np.argmax(ok[::-1]))
+            left_offset = np.argmax(ok)
+            self.start_indices.append(start + left_offset)
+            right_offset = np.argmax(ok[::-1])
+            self.end_indices.append(end - right_offset)
             self.lengths.append(fit.slope * (self.end_indices[-1] - self.start_indices[-1] - 1) * self.fields.bin_size)
+
+            self.trajectory_starts.append(np.nanmean(indices_max_cycle[left_offset:left_offset+self.side_steps]))
+            self.trajectory_ends.append(np.nanmean(indices_max_cycle[-right_offset - self.side_steps:-right_offset]))
+            self.real_positions.append(self.decoder.track.x_log[int(round(start + self.network.theta_cycle_steps/2))])
 
     def plot(self, t_start=0, t_end=None):
         fig, ax = self.decoder.plot(t_start, t_end)
@@ -61,14 +74,18 @@ class ThetaSweeps(SmartSim):
             last_index = self.network.theta_cycle_starts[-1]
         else:
             last_index = int(t_end / self.track.dt)
-        for fit_start, start_index, end_index, slope, intercept \
-                in zip(self.fit_starts, self.start_indices, self.end_indices, self.slopes, self.intercepts):
+        for cycle_num, (fit_start, start_index, end_index, slope, intercept) \
+                in enumerate(zip(self.fit_starts, self.start_indices, self.end_indices, self.slopes, self.intercepts)):
             if start_index > first_index and end_index < last_index:
                 x = np.arange(start_index, end_index) * self.track.dt
 
                 rel_start = start_index - fit_start
                 rel_end = end_index - fit_start
                 ax.plot(x, (fit_x * slope + intercept)[rel_start:rel_end]*self.fields.bin_size, color='k')
+
+                ax.plot((start_index + self.side_steps/2) * self.track.dt, self.trajectory_starts[cycle_num] * self.fields.bin_size, '*', color='C1')
+                ax.plot((fit_start + self.network.theta_cycle_steps/2) * self.track.dt, self.real_positions[cycle_num], '*', color='white')
+                ax.plot((end_index - self.side_steps/2) * self.track.dt, self.trajectory_ends[cycle_num] * self.fields.bin_size, '*', color='C3')
 
         custom_lines = [Line2D([0], [0], color='white'),
                         Line2D([0], [0], color='black')]
@@ -104,6 +121,6 @@ if __name__ == "__main__":
                                                  figure_format='png'))
     sweeps.plot(t_start=150.62)
     # sweeps.plot(t_start=151.256, t_end=151.632)
-    sweeps.length_vs_mean_speed()
+    # sweeps.length_vs_mean_speed()
 
     plt.show()
