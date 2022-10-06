@@ -29,20 +29,21 @@ class PlaceFields(SmartSim):
         self.dens_window_size = dens_window_size
         self.dens_window_stride = dens_window_stride
 
+        self.occupancies = np.zeros(self.num_bins, dtype=int)
         self.activations = np.full((self.last_unit, self.num_bins), np.nan)
+        self.pos_activations = np.full((self.last_unit, self.num_bins), np.nan)
 
         self.compute_activations()
         self.field_peak_indices, self.field_bound_indices, self.field_bounds_ok, self.field_prominence_ok = \
             self.compute_fields(self.activations)
 
     def compute_activations(self):
-        occupancies = np.zeros(self.num_bins, dtype=int)
         activations = np.zeros(self.activations.shape)
         for t_step in range(self.first_t_step, len(self.track.x_log)):
             bin_num = int(self.track.x_log[t_step] / self.bin_size)
-            occupancies[bin_num] += 1
+            self.occupancies[bin_num] += 1
             activations[:, bin_num] += self.network.act_out_log[t_step][:self.last_unit]
-        self.activations = activations / occupancies
+        self.activations = activations / self.occupancies
 
         if self.sigma > 0:
             self.activations = gaussian_filter1d(self.activations, sigma=self.sigma, mode='nearest')
@@ -110,7 +111,7 @@ class PlaceFields(SmartSim):
             bins = abs(peak_index - bound_index)
         return bins * self.bin_size
 
-    def sizes_vs_mean_speed(self, half_size=False, plot=True, colour_by_position=True):
+    def sizes_vs_mean_speed(self, half_size=False, plot=False, colour_by_position=True):
         speeds = []
         sizes = []
         positions = []
@@ -146,7 +147,7 @@ class PlaceFields(SmartSim):
             ax.set_xlabel("Mean running speed (cm/s)")
             self.maybe_save_fig(fig, "size_vs_speed")
 
-    def density_vs_mean_speed(self, plot=True, first_to_last=True):
+    def density_vs_mean_speed(self, plot=False, first_to_last=True):
         peak_positions = (self.field_peak_indices[self.field_prominence_ok] + 0.5) * self.bin_size
         if first_to_last:
             start = peak_positions.min()
@@ -177,7 +178,7 @@ class PlaceFields(SmartSim):
             ax.set_ylabel("Place field density (peaks/cm)")
             self.maybe_save_fig(fig, "density_vs_speed")
 
-    def separation_vs_mean_speed(self, plot=True):
+    def separation_vs_mean_speed(self, plot=False):
         """Distance between neighbouring peaks.
         """
         peak_indices = np.sort(self.field_peak_indices[self.field_prominence_ok])
@@ -198,16 +199,20 @@ class PlaceFields(SmartSim):
             ax.set_ylabel("Place field separation (cm)")
             self.maybe_save_fig(fig, "separation_vs_speed")
 
-    def true_field(self, unit, fig_size=(6.4, 4.8)):
-        occupancies = np.zeros(self.num_bins, dtype=int)
-        activations = np.zeros(self.num_bins)
-
+    def compute_true_fields(self):
+        """Compute 'true' place fields based on each cell's positional input.
+        """
+        pos_activations = np.zeros(self.pos_activations.shape)
         for t_step in range(self.first_t_step, len(self.track.x_log)):
             bin_num = int(self.track.x_log[t_step] / self.bin_size)
-            occupancies[bin_num] += 1
-            activations[bin_num] += self.network.pos_input_log[t_step][unit]
+            pos_activations[:, bin_num] += self.network.pos_input_log[t_step][:self.last_unit]
+        self.pos_activations = pos_activations / self.occupancies
 
-        activations = gaussian_filter1d(activations / occupancies, sigma=self.sigma, mode='nearest')
+        if self.sigma > 0:
+            self.pos_activations = gaussian_filter1d(self.pos_activations, sigma=self.sigma, mode='nearest')
+
+    def plot_true_field(self, unit, fig_size=(6.4, 4.8)):
+        activations = self.pos_activations[unit]
 
         fig, ax = plt.subplots(figsize=fig_size, constrained_layout=True)
         ax.axvline(self.bins_x[np.argmax(activations)], color='C1', linestyle='dashed')
@@ -221,7 +226,46 @@ class PlaceFields(SmartSim):
         ax.legend(loc='upper right')
         self.maybe_save_fig(fig, "true_field")
 
-    def slow_and_fast_sizes(self, plot=True):
+    def true_field_shifts(self, plot=False):
+        if np.isnan(self.pos_activations).all():
+            self.compute_true_fields()
+
+        field_nums = []
+        speeds = []
+        measured_peaks = []
+        true_peaks = []
+
+        for field_num, prominence_ok in enumerate(self.field_prominence_ok):
+            if not prominence_ok:
+                continue
+
+            field_nums.append(field_num)
+            peak_index = self.field_peak_indices[field_num]
+            bound_indices = self.field_bound_indices[field_num]
+            speeds.append(np.nanmean(self.track.mean_speeds[bound_indices[0]:bound_indices[1] + 1]))
+            measured_peaks.append((peak_index + 0.5) * self.bin_size)
+            true_peaks.append((np.argmax(self.pos_activations[field_num]) + 0.5) * self.bin_size)
+
+        shifts = [m - t for m, t in zip(measured_peaks, true_peaks)]
+        self.maybe_pickle_results(shifts, "shifts", sub_folder="shifts")
+        self.maybe_pickle_results(speeds, "speeds", sub_folder="shifts")
+        self.maybe_pickle_results(measured_peaks, "positions", sub_folder="shifts")
+
+        if plot:
+            fig, ax = plt.subplots(1, 2, figsize=(8, 4), constrained_layout=True)
+            ax[0].scatter(measured_peaks, field_nums, label='measured')
+            ax[0].scatter(true_peaks, field_nums, label='spatial input')
+            ax[0].set_ylabel("Place field #")
+            ax[0].set_xlabel("Peak position (cm)")
+            ax[0].legend()
+
+            sc = ax[1].scatter(speeds, shifts, c=measured_peaks)
+            ax[1].set_ylabel("Peak shift (cm)")
+            ax[1].set_xlabel("Mean speed (cm/s)")
+            bar = fig.colorbar(sc)
+            bar.set_label("Peak position (cm)")
+
+    def slow_and_fast_sizes(self, plot=False):
         occupancies = np.zeros((2, self.num_bins), dtype=int) + 0.1
         activations = np.zeros((self.last_unit, 2, self.num_bins))
         for t_step in range(self.first_t_step, len(self.track.x_log)):
@@ -256,15 +300,20 @@ class PlaceFields(SmartSim):
 if __name__ == "__main__":
     plt.rcParams.update({'font.size': 11})
 
-    variants = {'LinearTrack': 'Many', 'Network': 'LogPosInput'}
+    variants = {
+        # 'LinearTrack': 'Many',
+        'Network': 'LogPosInput'
+    }
     pf = PlaceFields.current_instance(Config(identifier=1, variants=variants, pickle_instances=True,
                                              save_figures=False, figure_format='pdf'))
     # pf.plot_activations(fig_size=(4, 4))
-    pf.sizes_vs_mean_speed(colour_by_position=True)
+    # pf.sizes_vs_mean_speed(colour_by_position=True)
     # pf.density_vs_mean_speed()
 
-    # pf.true_field(unit=68, fig_size=(4, 2))
+    pf.compute_true_fields()
+    # pf.plot_true_field(unit=20)
+    pf.true_field_shifts(plot=True)
 
-    pf.fast_and_slow_sizes()
+    # pf.slow_and_fast_sizes()
 
     plt.show()

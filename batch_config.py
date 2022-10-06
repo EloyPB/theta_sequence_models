@@ -4,7 +4,7 @@ from socket import gethostname
 
 
 NUM_RUNS = 8
-variants = {}
+variants = {'Network': 'LogPosInput'}
 
 
 # DEFINE PATHS (change according to your file system!)
@@ -30,4 +30,4 @@ for drive_name in drive_names:
 
 root_path = f"{root_path}/BDSweeps"
 pickles_path = f"{root_path}/pickles"  # Path where the pickles will be saved
-figures_path = f"{root_path}/figures"  # Path to where the figures will be saved
+figures_path = f"{root_path}/figures"  # Path where the figures will be saved

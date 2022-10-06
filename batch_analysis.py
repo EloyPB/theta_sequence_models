@@ -17,13 +17,14 @@ def analyze(identifier):
     pf = PlaceFields.current_instance(config)
     # pf.plot_activations(fig_size=(4, 4))
     pf.sizes_vs_mean_speed()
-    # pf.slow_and_fast_sizes()
+    pf.slow_and_fast_sizes()
+    pf.true_field_shifts()
     # pf.density_vs_mean_speed()
     del pf
 
-    pp = PhasePrecession.current_instance(config)
-    pp.slopes_vs_mean_speed()
-    del pp
+    # pp = PhasePrecession.current_instance(config)
+    # pp.slopes_vs_mean_speed()
+    # del pp
 
     # sweeps = ThetaSweeps.current_instance(config)
     # sweeps.length_vs_mean_speed()
@@ -33,6 +34,4 @@ def analyze(identifier):
 
 with Pool(processes=2) as pool:
     pool.map(analyze, range(NUM_RUNS))
-
-
 
