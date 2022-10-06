@@ -9,7 +9,7 @@ from Decoder import Decoder
 class ThetaSweeps(SmartSim):
     dependencies = [Decoder]
 
-    def __init__(self, min_fraction_ok, config=Config(), d={}):
+    def __init__(self, min_fraction_ok, side_portion, config=Config(), d={}):
         SmartSim.__init__(self, config, d)
         self.decoder: Decoder = d['Decoder']
         self.fields = self.decoder.fields
@@ -17,6 +17,7 @@ class ThetaSweeps(SmartSim):
         self.track = self.network.track
 
         self.min_steps_ok = self.network.theta_cycle_steps * min_fraction_ok
+        self.side_steps = int(round(self.network.theta_cycle_steps * side_portion))
 
         self.slopes = []
         self.intercepts = []

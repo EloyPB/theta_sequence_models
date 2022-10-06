@@ -1,3 +1,4 @@
 {
-  "min_fraction_ok": 0.8
+  "min_fraction_ok": 0.8,
+  "side_portion": 0.2
 }
