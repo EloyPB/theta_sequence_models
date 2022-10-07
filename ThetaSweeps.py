@@ -24,7 +24,8 @@ class ThetaSweeps(SmartSim):
 
         self.trajectory_starts = []
         self.trajectory_ends = []
-        self.real_positions = []
+        self.real_pos_starts = []
+        self.real_pos_ends = []
 
         self.slopes = []
         self.intercepts = []
@@ -64,7 +65,8 @@ class ThetaSweeps(SmartSim):
 
             self.trajectory_starts.append(np.nanmean(indices_max_cycle[left_offset:left_offset+self.side_steps]))
             self.trajectory_ends.append(np.nanmean(indices_max_cycle[-right_offset - self.side_steps:-right_offset]))
-            self.real_positions.append(self.decoder.track.x_log[int(round(start + self.network.theta_cycle_steps/2))])
+            self.real_pos_starts.append(np.mean(self.decoder.track.x_log[start+left_offset:start+left_offset+self.side_steps]))
+            self.real_pos_ends.append(np.mean(self.decoder.track.x_log[end-right_offset-self.side_steps:end-right_offset]))
 
     def plot(self, t_start=0, t_end=None):
         fig, ax = self.decoder.plot(t_start, t_end)
@@ -84,7 +86,6 @@ class ThetaSweeps(SmartSim):
                 ax.plot(x, (fit_x * slope + intercept)[rel_start:rel_end]*self.fields.bin_size, color='k')
 
                 ax.plot((start_index + self.side_steps/2) * self.track.dt, self.trajectory_starts[cycle_num] * self.fields.bin_size, '*', color='C1')
-                ax.plot((fit_start + self.network.theta_cycle_steps/2) * self.track.dt, self.real_positions[cycle_num], '*', color='white')
                 ax.plot((end_index - self.side_steps/2) * self.track.dt, self.trajectory_ends[cycle_num] * self.fields.bin_size, '*', color='C3')
 
         custom_lines = [Line2D([0], [0], color='white'),
@@ -113,6 +114,34 @@ class ThetaSweeps(SmartSim):
             self.maybe_pickle_results(self.lengths, "lengths")
             self.maybe_pickle_results(positions, "positions")
 
+    def ahead_and_behind_vs_mean_speed(self, plot=False):
+        ahead_lengths = np.array(self.trajectory_ends) * self.fields.bin_size - np.array(self.real_pos_ends)
+        ahead_speeds = [self.track.mean_speeds[int(pos/self.fields.bin_size)] for pos in self.real_pos_ends]
+        behind_lengths = np.array(self.real_pos_starts) - np.array(self.trajectory_starts) * self.fields.bin_size
+        behind_speeds = [self.track.mean_speeds[int(pos/self.fields.bin_size)] for pos in self.real_pos_starts]
+
+        self.maybe_pickle_results(ahead_lengths, "ahead_lengths", sub_folder="ahead_and_behind")
+        self.maybe_pickle_results(ahead_speeds, "ahead_speeds", sub_folder="ahead_and_behind")
+        self.maybe_pickle_results(self.real_pos_ends, "ahead_real_pos", sub_folder="ahead_and_behind")
+
+        self.maybe_pickle_results(behind_lengths, "behind_lengths", sub_folder="ahead_and_behind")
+        self.maybe_pickle_results(behind_speeds, "behind_speeds", sub_folder="ahead_and_behind")
+        self.maybe_pickle_results(self.real_pos_starts, "behind_real_pos", sub_folder="ahead_and_behind")
+
+        if plot:
+            fig, ax = plt.subplots(1, 2, sharey='row', figsize=(8, 4))
+            ax[0].scatter(ahead_speeds, ahead_lengths, c=self.real_pos_ends, vmin=0, vmax=self.track.length)
+            ax[0].set_title("Ahead length")
+            ax[0].set_xlabel("Mean speed (cm/s)")
+            ax[0].set_ylabel("Length (cm)")
+            sc = ax[1].scatter(behind_speeds, behind_lengths, c=self.real_pos_starts, vmin=0, vmax=self.track.length)
+            ax[1].set_title("Behind length")
+            ax[1].set_xlabel("Mean speed (cm/s)")
+            c_bar = fig.colorbar(sc)
+            c_bar.set_label("Position (cm)")
+            self.maybe_save_fig(fig, "ahead_and_behind_lengths")
+
+
 
 if __name__ == "__main__":
     plt.rcParams.update({'font.size': 11})
@@ -122,5 +151,7 @@ if __name__ == "__main__":
     sweeps.plot(t_start=150.62)
     # sweeps.plot(t_start=151.256, t_end=151.632)
     # sweeps.length_vs_mean_speed()
+
+    sweeps.ahead_and_behind_vs_mean_speed(plot=True)
 
     plt.show()
