@@ -1,8 +1,10 @@
 import os
+import math
 from typing import Type
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
 import seaborn as sns
 from generic.smart_sim import SmartSim
 from batch_config import *
@@ -16,8 +18,8 @@ from ThetaSweeps import ThetaSweeps
 plt.rcParams.update({'font.size': 11})
 
 
-def plot(name, class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path_y, c_label="", rel_path_c=None, s=18,
-         alpha=1., fig_size=(4, 3.5), format='pdf'):
+def plot(name, class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path_y, z_label="", rel_path_z=None,
+         z_binned_average=False, z_bin_size=1, s=18, alpha=1., fig_size=(4, 3.5), format='pdf', z_min=0, z_max=200):
 
     def load(rel_path):
         with open(f"{path}{rel_path}", 'rb') as f:
@@ -25,21 +27,46 @@ def plot(name, class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path
 
     all_x = []
     all_y = []
-    all_c = []
+    all_z = []
 
     for identifier in range(NUM_RUNS):
         path = class_def.complete_path(pickles_path, str(identifier), variants)
         all_x += load(rel_path_x)
         all_y += load(rel_path_y)
-        if rel_path_c:
-            all_c += load(rel_path_c)
+        if rel_path_z:
+            all_z += load(rel_path_z)
 
     fig, ax = plt.subplots(figsize=fig_size, constrained_layout=True)
-    sc = ax.scatter(all_x, all_y, c=all_c if len(all_c) else None, s=s, alpha=alpha, edgecolors='none',
-                    vmin=0, vmax=200)
-    if len(all_c):
+    sc = ax.scatter(all_x, all_y, c=all_z if len(all_z) else None, s=s, alpha=alpha, edgecolors='none',
+                    vmin=z_min, vmax=z_max)
+    if len(all_z):
         c_bar = fig.colorbar(sc)
-        c_bar.set_label(c_label)
+        c_bar.set_label(z_label)
+
+    if z_binned_average:
+        x_averages = np.zeros(int(math.ceil(max(all_z) / z_bin_size)))
+        y_averages = np.zeros_like(x_averages)
+        counts = np.zeros_like(x_averages)
+
+        for x, y, z in zip(all_x, all_y, all_z):
+            index = int(z / z_bin_size)
+            x_averages[index] += x
+            y_averages[index] += y
+            counts[index] += 1
+
+        not_zero = np.nonzero(counts)
+        x_averages[not_zero] = x_averages[not_zero] / counts[not_zero]
+        y_averages[not_zero] = y_averages[not_zero] / counts[not_zero]
+
+        ax.plot(x_averages[not_zero], y_averages[not_zero], color='white', linewidth=5)
+
+        points = np.array([x_averages[not_zero], y_averages[not_zero]]).T.reshape(-1, 1, 2)
+        segments = np.concatenate([points[:-1], points[1:]], axis=1)
+        norm = plt.Normalize(z_min, z_max)
+        lc = LineCollection(segments, cmap='viridis', norm=norm)
+        lc.set_array(np.arange(z_bin_size/2, z_max, z_bin_size))
+        lc.set_linewidth(2)
+        line = ax.add_collection(lc)
 
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
@@ -86,7 +113,8 @@ if not os.path.exists(path):
 
 x_label = "Mean speed (cm/s)"
 
-plot("sizes", PlaceFields, x_label, "speeds", "Place field size (cm)", "sizes", "Position (cm)", "positions")
+plot("sizes", PlaceFields, x_label, "speeds", "Place field size (cm)", "sizes", "Position (cm)", "positions",
+     z_binned_average=True, z_bin_size=2)
 # plot("densities", PlaceFields, x_label, "density/speeds", "Place field density (peaks/cm)", "density/densities",
 #      alpha=0.5)
 # plot("separations", PlaceFields, x_label, "separation/speeds", "Place field separation (cm)",
@@ -98,7 +126,7 @@ plot("sizes", PlaceFields, x_label, "speeds", "Place field size (cm)", "sizes", 
 # plot("slopes", PhasePrecession, x_label, "speeds", "Inverse phase precession slope (cm/deg)", "slopes",
 #      "Position (cm)", "positions")
 #
-# plot("sweeps", ThetaSweeps, x_label, "speeds", "Theta sweep length (cm)", "lengths", "Position (cm)", "positions",
-#      s=10, format='png')
+plot("sweeps", ThetaSweeps, x_label, "speeds", "Theta sweep length (cm)", "lengths", "Position (cm)", "positions",
+     z_binned_average=True, z_bin_size=2, s=10, format='png')
 
 plt.show()

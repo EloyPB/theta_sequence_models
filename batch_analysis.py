@@ -14,20 +14,20 @@ def analyze(identifier):
                     figures_root_path=figures_path, pickle_instances=True, pickle_results=True,
                     pickles_root_path=pickles_path)
 
-    pf = PlaceFields.current_instance(config)
+    # pf = PlaceFields.current_instance(config)
     # pf.plot_activations(fig_size=(4, 4))
-    pf.sizes_vs_mean_speed()
+    # pf.sizes_vs_mean_speed()
     # pf.slow_and_fast_sizes()
     # pf.field_peak_shifts()
     # pf.density_vs_mean_speed()
-    del pf
+    # del pf
 
-    # pp = PhasePrecession.current_instance(config)
-    # pp.slopes_vs_mean_speed()
-    # del pp
+    pp = PhasePrecession.current_instance(config)
+    pp.slopes_vs_mean_speed()
+    del pp
 
-    # sweeps = ThetaSweeps.current_instance(config)
-    # sweeps.length_vs_mean_speed()
+    sweeps = ThetaSweeps.current_instance(config)
+    sweeps.length_vs_mean_speed()
 
 
 # RUN ANALYSES
