@@ -80,21 +80,20 @@ def plot_speed_increments(name, class_def: Type[SmartSim], y_label, rel_path_y, 
     fig.savefig(f"{figures_path}/ALL/{name}.{format}", dpi=400)
 
 
-
 path = f"{figures_path}/ALL"
 if not os.path.exists(path):
     os.makedirs(path)
 
 x_label = "Mean speed (cm/s)"
 
-# plot("sizes", PlaceFields, x_label, "speeds", "Place field size (cm)", "sizes", "Position (cm)", "positions")
+plot("sizes", PlaceFields, x_label, "speeds", "Place field size (cm)", "sizes", "Position (cm)", "positions")
 # plot("densities", PlaceFields, x_label, "density/speeds", "Place field density (peaks/cm)", "density/densities",
 #      alpha=0.5)
 # plot("separations", PlaceFields, x_label, "separation/speeds", "Place field separation (cm)",
 #      "separation/separations")
-plot("shifts", PlaceFields, x_label, "shifts/speeds", "Place field peak shift (cm)", "shifts/shifts", "Position (cm)",
-     "shifts/positions")
-plot_speed_increments("size_increments", PlaceFields, r"$\Delta$ Place field size (cm)", "slow_and_fast_sizes")
+# plot("shifts", PlaceFields, x_label, "shifts/speeds", "Place field peak shift (cm)", "shifts/shifts", "Position (cm)",
+#      "shifts/positions")
+# plot_speed_increments("size_increments", PlaceFields, r"$\Delta$ Place field size (cm)", "slow_and_fast_sizes")
 
 # plot("slopes", PhasePrecession, x_label, "speeds", "Inverse phase precession slope (cm/deg)", "slopes",
 #      "Position (cm)", "positions")
