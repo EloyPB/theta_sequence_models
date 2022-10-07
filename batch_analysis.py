@@ -18,7 +18,7 @@ def analyze(identifier):
     # pf.plot_activations(fig_size=(4, 4))
     pf.sizes_vs_mean_speed()
     pf.slow_and_fast_sizes()
-    pf.true_field_shifts()
+    pf.field_peak_shifts()
     # pf.density_vs_mean_speed()
     del pf
 

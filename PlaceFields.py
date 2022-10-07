@@ -37,6 +37,12 @@ class PlaceFields(SmartSim):
         self.field_peak_indices, self.field_bound_indices, self.field_bounds_ok, self.field_prominence_ok = \
             self.compute_fields(self.activations)
 
+        if self.network.log_pos_input:
+            self.compute_true_fields()
+            self.true_peaks = None
+            self.shifts = None
+            self.field_peak_shifts()
+
     def compute_activations(self):
         activations = np.zeros(self.activations.shape)
         for t_step in range(self.first_t_step, len(self.track.x_log)):
@@ -226,14 +232,15 @@ class PlaceFields(SmartSim):
         ax.legend(loc='upper right')
         self.maybe_save_fig(fig, "true_field")
 
-    def true_field_shifts(self, plot=False):
-        if np.isnan(self.pos_activations).all():
-            self.compute_true_fields()
-
+    def field_peak_shifts(self, plot=False):
         field_nums = []
         speeds = []
         measured_peaks = []
-        true_peaks = []
+        self.true_peaks = []
+
+        # x = np.arange(self.num_bins)
+        # true_cms = []
+        # measured_cms = []
 
         for field_num, prominence_ok in enumerate(self.field_prominence_ok):
             if not prominence_ok:
@@ -244,22 +251,27 @@ class PlaceFields(SmartSim):
             bound_indices = self.field_bound_indices[field_num]
             speeds.append(np.nanmean(self.track.mean_speeds[bound_indices[0]:bound_indices[1] + 1]))
             measured_peaks.append((peak_index + 0.5) * self.bin_size)
-            true_peaks.append((np.argmax(self.pos_activations[field_num]) + 0.5) * self.bin_size)
+            self.true_peaks.append((np.argmax(self.pos_activations[field_num]) + 0.5) * self.bin_size)
 
-        shifts = [m - t for m, t in zip(measured_peaks, true_peaks)]
-        self.maybe_pickle_results(shifts, "shifts", sub_folder="shifts")
+            # true_cms.append(np.sum(self.pos_activations[field_num] * x)/np.sum(self.pos_activations[field_num]))
+            # measured_cms.append(np.sum(self.activations[field_num] * x)/np.sum(self.activations[field_num]))
+
+        self.shifts = [m - t for m, t in zip(measured_peaks, self.true_peaks)]
+        self.maybe_pickle_results(self.shifts, "shifts", sub_folder="shifts")
         self.maybe_pickle_results(speeds, "speeds", sub_folder="shifts")
-        self.maybe_pickle_results(measured_peaks, "positions", sub_folder="shifts")
+        self.maybe_pickle_results(self.true_peaks, "positions", sub_folder="shifts")
+
+        # self.cm_shifts = [(m - t)*self.bin_size for m, t in zip(measured_cms, true_cms)]
 
         if plot:
             fig, ax = plt.subplots(1, 2, figsize=(8, 4), constrained_layout=True)
             ax[0].scatter(measured_peaks, field_nums, label='measured')
-            ax[0].scatter(true_peaks, field_nums, label='spatial input')
+            ax[0].scatter(self.true_peaks, field_nums, label='spatial input')
             ax[0].set_ylabel("Place field #")
             ax[0].set_xlabel("Peak position (cm)")
             ax[0].legend()
 
-            sc = ax[1].scatter(speeds, shifts, c=measured_peaks)
+            sc = ax[1].scatter(speeds, self.shifts, c=self.true_peaks)
             ax[1].set_ylabel("Peak shift (cm)")
             ax[1].set_xlabel("Mean speed (cm/s)")
             bar = fig.colorbar(sc)
@@ -312,7 +324,7 @@ if __name__ == "__main__":
 
     pf.compute_true_fields()
     # pf.plot_true_field(unit=20)
-    pf.true_field_shifts(plot=True)
+    pf.field_peak_shifts(plot=True)
 
     # pf.slow_and_fast_sizes()
 
