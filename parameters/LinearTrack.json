@@ -7,6 +7,5 @@
   "speed_profile_points": [[0, 15], [100, 80], [200, 15]],
   "speed_factor_sigma": 2,
   "speed_factor_amplitude": 1,
-  "num_laps": 30,
-  "interlap_t": 0
+  "num_laps": 30
 }

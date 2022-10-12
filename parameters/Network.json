@@ -24,5 +24,6 @@
   "log_act": 0,
   "log_theta": 0,
   "log_dynamics": 0,
-  "log_pos_input": 0
+  "log_pos_input": 0,
+  "log_after": 0
 }

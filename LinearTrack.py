@@ -8,7 +8,7 @@ from generic.smart_sim import Config, SmartSim
 
 class LinearTrack(SmartSim):
     def __init__(self, length, ds, dt, num_features, features_sigma_range, speed_profile_points, speed_factor_sigma=3,
-                 speed_factor_amplitude=1, num_laps=0, interlap_t=0, config=Config(), d={}):
+                 speed_factor_amplitude=1, num_laps=0, config=Config(), d={}):
 
         SmartSim.__init__(self, config, d)
 
@@ -34,7 +34,7 @@ class LinearTrack(SmartSim):
         self.x_log = []
         self.speed_log = []
         self.speed_factor_log = []
-        self.lap_start_indices = []
+        self.lap_start_steps = []
 
         self.mean_speeds = None
 
@@ -46,7 +46,6 @@ class LinearTrack(SmartSim):
             steps += 1
         self.mean_lap_duration = steps * self.dt
 
-        self.interlap_steps = int(interlap_t / self.dt)
         self.run_laps(num_laps)
 
     def pl_speed_profile(self, points):
@@ -112,24 +111,20 @@ class LinearTrack(SmartSim):
         else:
             speed_factor = np.ones(int(duration / self.dt))
 
-        i = 0
+        t_step = 0
         for lap_num in range(num_laps):
             x = 0
-            self.lap_start_indices.append(len(self.x_log))
-            if self.interlap_steps:
-                self.x_log += [x for _ in range(self.interlap_steps)]
-                self.speed_log += [0 for _ in range(self.interlap_steps)]
-                self.speed_factor_log += [np.nan for _ in range(self.interlap_steps)]
+            self.lap_start_steps.append(len(self.x_log))
 
             while True:
-                speed = self.speed_profile[int(x / self.ds)] * speed_factor[i]
+                speed = self.speed_profile[int(x / self.ds)] * speed_factor[t_step]
                 x += speed * self.dt
                 if x >= self.length:
                     break
                 self.speed_log.append(speed)
                 self.x_log.append(x)
-                self.speed_factor_log.append(speed_factor[i])
-                i += 1
+                self.speed_factor_log.append(speed_factor[t_step])
+                t_step += 1
 
     def plot_trajectory(self):
         fig, ax = plt.subplots(3, sharex="col")
@@ -167,10 +162,10 @@ class LinearTrack(SmartSim):
 
 
 if __name__ == "__main__":
-    track = LinearTrack.current_instance(Config(identifier=1))
+    track = LinearTrack.current_instance(Config(identifier=2))
 
     print("plotting...")
-    track.plot_features()
+    # track.plot_features()
     track.plot_trajectory()
     track.compute_mean_speeds(bin_size=2, plot=True)
     plt.show()

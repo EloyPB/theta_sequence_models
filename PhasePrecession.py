@@ -156,16 +156,54 @@ class PhasePrecession(SmartSim):
             ax.set_xlabel("Mean running speed (cm/s)")
             self.maybe_save_fig(fig, "slope_vs_speed")
 
+    def fast_and_slow_slopes(self, plot=False):
+        occupancies = np.zeros((2, self.num_phase_bins, self.num_spatial_bins))
+        clouds = np.zeros((self.num_units, 2, self.num_phase_bins, self.num_spatial_bins))
+
+        for t_step in range(self.fields.first_t_step, len(self.track.x_log)):
+            spatial_bin_num = int(self.track.x_log[t_step] / self.spatial_bin_size)
+            phase_bin_num = int(self.network.theta_phase_log[t_step] / self.phase_bin_size)
+            speed_factor = self.track.speed_factor_log[t_step]
+            i = int(speed_factor > 1)
+            occupancies[i, phase_bin_num, spatial_bin_num] += 1
+            clouds[:, i, phase_bin_num, spatial_bin_num] += self.network.act_out_log[t_step][:self.num_units]
+
+        positive = occupancies > 0
+        clouds[:, positive] = clouds[:, positive] / occupancies[positive]
+
+        slopes = np.full((2, self.num_units), np.nan)
+
+        phase_span = self.phase_bin_size * (self.num_phase_bins - 1) * 180 / np.pi
+        for i in range(2):
+            for unit_num, (cloud, bounds, bounds_ok) in enumerate(zip(clouds[:, i], self.fields.field_bound_indices,
+                                                                      self.fields.field_bounds_ok)):
+                if all(bounds_ok):
+                    slope, intercept = self.fit_cloud(cloud[:, bounds[0]:bounds[1]+1])
+                    slopes[i, unit_num] = slope * phase_span / (self.spatial_bin_size * (bounds[1] - bounds[0]))
+
+        self.maybe_pickle_results(slopes, "slow_and_fast_slopes")
+
+        if plot:
+            fig, ax = plt.subplots()
+            ax.plot(1/slopes, color='C7')
+            ax.plot(1/slopes, 'o', color='k')
+            ax.set_xticks((0, 1))
+            ax.set_xticklabels(('Slow', 'Fast'))
+            ax.set_ylabel("Inverse phase precession slope (cm/º)")
+            self.maybe_save_fig(fig, "slow_and_fast")
+
 
 if __name__ == "__main__":
     plt.rcParams.update({'font.size': 11})
 
     pp = PhasePrecession.current_instance(Config(variants={'LinearTrack': 'ManyLaps'}, identifier=1,
-                                                 pickle_instances=True, save_figures=True, figure_format='pdf'))
+                                                 pickle_instances=True, save_figures=False, figure_format='pdf'))
     # for unit in [40, 60, 80, 100, 120]:
     #     pp.plot_cloud(unit)
     pp.slopes_vs_mean_speed()
 
     pp.plot_clouds((40, 60, 80, 100, 120))
+
+    pp.fast_and_slow_slopes(plot=True)
 
     plt.show()

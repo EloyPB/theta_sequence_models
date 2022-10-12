@@ -6,6 +6,8 @@ from Network import Network, LinearTrack
 from generic.smart_sim import Config, SmartSim
 
 
+# todo: calculate each field's mean speed only once
+
 class PlaceFields(SmartSim):
     dependencies = [Network]
 
@@ -288,7 +290,7 @@ class PlaceFields(SmartSim):
             activations[:, i, bin_num] += self.network.act_out_log[t_step][:self.last_unit]
         activations /= occupancies
 
-        sizes = np.full((2, self.last_unit), 20)
+        sizes = np.full((2, self.last_unit), np.nan)
         for i in range(2):
             if self.sigma > 0:
                 activations[:, i] = gaussian_filter1d(activations[:, i], sigma=self.sigma, mode='nearest')
@@ -314,7 +316,7 @@ if __name__ == "__main__":
 
     variants = {
         # 'LinearTrack': 'Many',
-        'Network': 'LogPosInput'
+        # 'Network': 'LogPosInput'
     }
     pf = PlaceFields.current_instance(Config(identifier=1, variants=variants, pickle_instances=True,
                                              save_figures=False, figure_format='pdf'))
@@ -322,10 +324,10 @@ if __name__ == "__main__":
     # pf.sizes_vs_mean_speed(colour_by_position=True)
     # pf.density_vs_mean_speed()
 
-    pf.compute_true_fields()
+    # pf.compute_true_fields()
     # pf.plot_true_field(unit=20)
-    pf.field_peak_shifts(plot=True)
+    # pf.field_peak_shifts(plot=True)
 
-    # pf.slow_and_fast_sizes()
+    pf.slow_and_fast_sizes(plot=True)
 
     plt.show()

@@ -19,7 +19,7 @@ class Network(SmartSim):
                  act_sigmoid_midpoint, theta_min, theta_max, theta_concentration, base_f, tau_f, tau_d, pos_factor_0,
                  pos_factor_concentration, pos_factor_phase, pos_sigmoid_gain, pos_sigmoid_midpoint, reset_indices,
                  reset_value, learning_rate, log_act=False, log_theta=False, log_pos_input=False, log_dynamics=False,
-                 config=Config(), d={}):
+                 log_after=0, config=Config(), d={}):
 
         SmartSim.__init__(self, config, d)
 
@@ -31,6 +31,8 @@ class Network(SmartSim):
         self.num_units = num_units
         self.tau = tau
         self.dt_over_tau = self.track.dt / tau
+        self.first_t_step = int(log_after / self.track.dt)
+        logged_steps = len(self.track.x_log) - self.first_t_step
 
         # initialize recurrent weights
         self.w_rec = np.empty((num_units, num_units))
@@ -50,8 +52,6 @@ class Network(SmartSim):
         self.base_f = base_f
         self.tau_f = tau_f
         self.tau_d = tau_d
-        self.depression = np.zeros(self.num_units)
-        self.facilitation = np.full(self.num_units, self.base_f)
 
         self.pos_factor_0 = pos_factor_0
         self.pos_factor_concentration = pos_factor_concentration
@@ -61,22 +61,22 @@ class Network(SmartSim):
         self.w_pos = np.zeros((self.num_units, self.track.num_features))
         self.log_pos_input = log_pos_input
         if log_pos_input:
-            self.pos_input_log = np.empty((len(self.track.x_log), num_units))
+            self.pos_input_log = np.empty((logged_steps, num_units))
 
         self.log_dynamics = log_dynamics
         if log_dynamics:
-            self.depression_log = np.empty((len(self.track.x_log), num_units))
-            self.facilitation_log = np.empty((len(self.track.x_log), num_units))
+            self.depression_log = np.empty((logged_steps, num_units))
+            self.facilitation_log = np.empty((logged_steps, num_units))
 
         self.log_act = log_act
         if log_act:
-            self.act_log = np.empty((len(self.track.x_log), num_units))
-        self.act_out_log = np.empty((len(self.track.x_log), num_units))
+            self.act_log = np.empty((logged_steps, num_units))
+        self.act_out_log = np.empty((logged_steps, num_units))
 
         self.log_theta = log_theta
         if log_theta:
-            self.theta_log = np.empty(len(self.track.x_log))
-        self.theta_phase_log = np.empty(len(self.track.x_log))
+            self.theta_log = np.empty(logged_steps)
+        self.theta_phase_log = np.empty(logged_steps)
         self.theta_phase_log[-1] = 0
         self.theta_cycle_starts = []
 
@@ -93,73 +93,70 @@ class Network(SmartSim):
 
     def run(self, reset_indices, reset_value=1, learning_rate=0, verbose=0):
         exp_concentration = np.exp(self.pos_factor_concentration)
+        theta_phase = 0
 
-        for lap, lap_start_index in enumerate(self.track.lap_start_indices):
+        for lap, lap_start_step in enumerate(self.track.lap_start_steps):
             if verbose:
                 print(f"running lap {lap}...")
 
             # reset activity and internal dynamics
             act = np.zeros(self.num_units)
-            self.depression = np.zeros(self.num_units)
-            self.facilitation = np.full(self.num_units, self.base_f)
+            depression = np.zeros(self.num_units)
+            facilitation = np.full(self.num_units, self.base_f)
 
-            if lap + 1 < len(self.track.lap_start_indices):
-                last_lap_index = self.track.lap_start_indices[lap + 1]
+            if lap + 1 < len(self.track.lap_start_steps):
+                last_lap_step = self.track.lap_start_steps[lap + 1]
             else:
-                last_lap_index = len(self.track.x_log)
+                last_lap_step = len(self.track.x_log)
 
-            for index in range(lap_start_index, last_lap_index):
-                theta = self.theta(index)
+            for t_step in range(lap_start_step, last_lap_step):
+                i = t_step - self.first_t_step
 
+                # compute theta phase and theta inhibition
+                theta_phase += self.theta_phase_inc
+                if theta_phase > TWO_PI:
+                    theta_phase -= TWO_PI
+                    self.theta_cycle_starts.append(i)
+                theta = (-np.exp(self.theta_concentration * np.cos(theta_phase))
+                         * self.theta_multiplier + self.theta_max)
+
+                # compute spatial input
+                features = self.track.features[int(self.track.x_log[t_step] / self.track.ds)]
                 pos_factor = (np.exp(self.pos_factor_concentration
-                                     * np.cos(self.theta_phase_log[index] - self.pos_factor_phase))
+                                     * np.cos(theta_phase - self.pos_factor_phase))
                               / exp_concentration)
+                pos_input = self.f_pos(self.w_pos @ features) * pos_factor
 
-                if self.track.speed_log[index]:
-                    features = self.track.features[int(self.track.x_log[index] / self.track.ds)]
-                    pos_input = self.f_pos(self.w_pos @ features) * pos_factor
-                else:
-                    pos_input = np.zeros(self.num_units)
-                if self.log_pos_input:
-                    self.pos_input_log[index] = pos_input.copy()
-
-                if index - lap_start_index < self.theta_cycle_steps:
+                if t_step - lap_start_step < self.theta_cycle_steps:
                     clamp = np.zeros(self.num_units)
                     clamp[slice(*reset_indices)] = reset_value * pos_factor
                 else:
                     clamp = 0
 
-                self.act_out_log[index] = self.f_act(act)
-                act_out = self.act_out_log[index]
-                ready = (1 - self.depression) * self.facilitation
+                act_out = self.f_act(act)
+                ready = (1 - depression) * facilitation
                 rec_input = self.w_rec @ (act_out * ready)
                 act += (-act + clamp + theta + rec_input + self.pos_factor_0 * pos_input) * self.dt_over_tau
-                if self.log_act:
-                    self.act_log[index] = act.copy()
 
-                self.depression += (-self.depression + act_out) * self.track.dt / self.tau_d
-                self.facilitation += (-self.facilitation + self.base_f + (1 - self.facilitation)*act_out) * self.track.dt / self.tau_f
+                depression += (-depression + act_out) * self.track.dt / self.tau_d
+                facilitation += (-facilitation + self.base_f + (1 - facilitation)*act_out) * self.track.dt / self.tau_f
                 # self.facilitation += (-self.facilitation + self.base_f + act_out) * self.track.dt / self.tau_f  # simpler
 
-                if self.log_dynamics:
-                    self.depression_log[index] = self.depression.copy()
-                    self.facilitation_log[index] = self.facilitation.copy()
+                # self.w_pos += learning_rate * pos_factor * (act_out * (act_out - pos_input))[np.newaxis].T * features
+                self.w_pos += learning_rate * pos_factor * (act_out - pos_input)[np.newaxis].T * features
 
-                if self.track.speed_log[index]:
-                    # self.w_pos += learning_rate * pos_factor * (act_out * (act_out - pos_input))[np.newaxis].T * features
-                    self.w_pos += learning_rate * pos_factor * (act_out - pos_input)[np.newaxis].T * features
-
-    def theta(self, index):
-        self.theta_phase_log[index] = self.theta_phase_log[index - 1] + self.theta_phase_inc
-        if self.theta_phase_log[index] > TWO_PI:
-            self.theta_phase_log[index] -= TWO_PI
-            self.theta_cycle_starts.append(index)
-
-        theta = (-np.exp(self.theta_concentration * np.cos(self.theta_phase_log[index]))
-                 * self.theta_multiplier + self.theta_max)
-        if self.log_theta:
-            self.theta_log[index] = theta
-        return theta
+                if i >= 0:
+                    self.theta_phase_log[i] = theta_phase
+                    if self.log_theta:
+                        self.theta_log[i] = theta
+                    self.act_out_log[i] = act_out
+                    if self.log_act:
+                        self.act_log[i] = act.copy()
+                    if self.log_pos_input:
+                        self.pos_input_log[i] = pos_input.copy()
+                    if self.log_dynamics:
+                        self.depression_log[i] = depression.copy()
+                        self.facilitation_log[i] = facilitation.copy()
 
     def f_act(self, x):
         return 1 / (1 + np.exp(-self.act_sigmoid_gain * (x - self.act_sigmoid_midpoint)))
@@ -169,8 +166,8 @@ class Network(SmartSim):
 
     def plot_activities(self, t_start=0, t_end=None, first_unit=0, last_unit=None, apply_f=False, pos_input=False,
                         theta=False, speed=False, fig_size=(6.4, 4.8)):
-        index_start = int(t_start / self.track.dt)
-        index_end = int(t_end / self.track.dt) if t_end is not None else len(self.act_out_log)
+        index_start = max(int(t_start / self.track.dt) - self.first_t_step, 0)
+        index_end = int(t_end / self.track.dt) - self.first_t_step if t_end is not None else len(self.act_out_log)
 
         if last_unit is None:
             last_unit = self.num_units
@@ -184,7 +181,8 @@ class Network(SmartSim):
             v_min = act_log.min()
             v_max = act_log.max()
 
-        extent = (index_start * self.track.dt - self.track.dt / 2, index_end * self.track.dt - self.track.dt / 2,
+        extent = ((index_start + self.first_t_step) * self.track.dt - self.track.dt / 2,
+                  (index_end + self.first_t_step) * self.track.dt - self.track.dt / 2,
                   first_unit - 0.5, last_unit - 0.5)
 
         rows = 2 + theta + speed
@@ -220,16 +218,16 @@ class Network(SmartSim):
 
         if theta:
             ax1 = fig.add_subplot(spec[2, 0], sharex=ax0)
-            time = np.arange(len(self.act_out_log)) * self.track.dt
+            time = np.arange(self.first_t_step, self.first_t_step + len(self.act_out_log)) * self.track.dt
             ax1.plot(time, self.theta_log)
             ax1.set_ylabel("Theta")
             ax1.set_xlabel("Time (s)")
 
         if speed:
             ax2 = fig.add_subplot(spec[2 + theta, 0], sharex=ax0)
-            time = np.arange(len(self.act_out_log)) * self.track.dt
-            ax2.plot(time, self.track.speed_log)
-            max_v = max(max(self.track.speed_log) - 1, 1 - min(self.track.speed_log)) * 1.05
+            time = np.arange(self.first_t_step, self.first_t_step + len(self.act_out_log)) * self.track.dt
+            ax2.plot(time, self.track.speed_log[self.first_t_step:])
+            # max_v = max(max(self.track.speed_log) - 1, 1 - min(self.track.speed_log)) * 1.05
             # ax2.set_ylim(1 - max_v, 1 + max_v)
             ax2.set_ylabel("Speed (cm/s)")
             ax2.set_xlabel("Time (s)")
@@ -240,8 +238,8 @@ class Network(SmartSim):
         self.maybe_save_fig(fig, "activities", dpi=500)
 
     def plot_dynamics(self, t_start=0, t_end=None, first_unit=0, last_unit=None, apply_f=False):
-        index_start = int(t_start / self.track.dt)
-        index_end = int(t_end / self.track.dt) if t_end is not None else len(self.act_log)
+        index_start = max(int(t_start / self.track.dt) - self.first_t_step, 0)
+        index_end = int(t_end / self.track.dt) - self.first_t_step if t_end is not None else len(self.act_out_log)
 
         if last_unit is None:
             last_unit = self.num_units
@@ -256,7 +254,8 @@ class Network(SmartSim):
             v_max = act_log.max()
 
         foreground = colors.LinearSegmentedColormap.from_list('f', [(0, 0, 0, 0), (1, 1, 1, 1)], N=100)
-        extent = (index_start * self.track.dt - self.track.dt / 2, index_end * self.track.dt - self.track.dt / 2,
+        extent = ((index_start + self.first_t_step) * self.track.dt - self.track.dt / 2,
+                  (index_end + self.first_t_step) * self.track.dt - self.track.dt / 2,
                   first_unit - 0.5, last_unit - 0.5)
 
         fig = plt.figure(constrained_layout=True)
@@ -334,8 +333,9 @@ if __name__ == "__main__":
     config = Config(identifier=1, variants={
         'LinearTrack': 'OneLap',
         # 'LinearTrack': 'FixSpeed',
-        'Network': 'Log'
-    }, pickle_instances=True, save_figures=True, figure_format='pdf')
+        'Network': 'LogAll'
+        # 'Network': 'LogPosInput80'
+    }, pickle_instances=True, save_figures=False, figure_format='pdf')
     network = Network.current_instance(config)
 
     # network.track.plot_trajectory()
@@ -343,7 +343,7 @@ if __name__ == "__main__":
     # network.track.plot_features_heatmap()
 
     # network.plot_rec_weights()
-    # network.plot_activities(apply_f=0)
+    # network.plot_activities(apply_f=1)
 
     # # show facilitation and depression on a few runs at the beginning:
     # network.plot_dynamics(t_start=1.255, t_end=2.265, first_unit=28, last_unit=78, apply_f=1)
@@ -352,10 +352,10 @@ if __name__ == "__main__":
     # network.plot_activities(apply_f=1, pos_input=0, theta=0, speed=1, t_start=1.255, t_end=2.265,
     #                         first_unit=28, last_unit=78)
 
-    # # all runs:
-    # network.plot_activities(apply_f=1, pos_input=0, theta=0, speed=1, last_unit=200, fig_size=(8, 4.8))
+    # all runs:
+    network.plot_activities(apply_f=1, pos_input=0, theta=0, speed=1, last_unit=200, fig_size=(8, 4.8))
     # zoom in on one run at the end:
     # network.plot_activities(apply_f=1, pos_input=1, theta=0, speed=1, first_unit=34, last_unit=84, t_start=140, t_end=141.015)
 
-    network.plot_theta_and_pos_factor(fig_size=(4, 2))
+    # network.plot_theta_and_pos_factor(fig_size=(4, 2))
     plt.show()
