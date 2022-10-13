@@ -19,8 +19,8 @@ plt.rcParams.update({'font.size': 11})
 
 
 def plot(name, class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path_y, z_label="", rel_path_z=None,
-         z_binned_average=False, z_bin_size=1, s=18, alpha=1., fig_size=(4, 3.5), format='pdf', z_min=0, z_max=200,
-         extra_plotting=None):
+         z_binned_average=False, z_bin_size=1, z_bin_min_count=8, s=18, alpha=1., fig_size=(4, 3.5), format='pdf',
+         z_min=0, z_max=200, extra_plotting=None):
 
     def load(rel_path):
         with open(f"{path}{rel_path}", 'rb') as f:
@@ -55,13 +55,13 @@ def plot(name, class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path
             y_averages[index] += y
             counts[index] += 1
 
-        not_zero = np.nonzero(counts)
-        x_averages[not_zero] = x_averages[not_zero] / counts[not_zero]
-        y_averages[not_zero] = y_averages[not_zero] / counts[not_zero]
+        valid = counts >= z_bin_min_count
+        x_averages[valid] = x_averages[valid] / counts[valid]
+        y_averages[valid] = y_averages[valid] / counts[valid]
 
-        ax.plot(x_averages[not_zero], y_averages[not_zero], color='white', linewidth=5)
+        ax.plot(x_averages[valid], y_averages[valid], color='white', linewidth=5)
 
-        points = np.array([x_averages[not_zero], y_averages[not_zero]]).T.reshape(-1, 1, 2)
+        points = np.array([x_averages[valid], y_averages[valid]]).T.reshape(-1, 1, 2)
         segments = np.concatenate([points[:-1], points[1:]], axis=1)
         norm = plt.Normalize(z_min, z_max)
         lc = LineCollection(segments, cmap='viridis', norm=norm)
@@ -80,30 +80,34 @@ def plot(name, class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path
     fig.savefig(f"{figures_path}/ALL/{name}.{format}", dpi=400)
 
 
-def plot_speed_increments(name, class_def: Type[SmartSim], y_label, rel_path_y, format='pdf'):
-    all_increments = []
+def plot_speed_ratios(name, class_def: Type[SmartSim], label, rel_path_y, bin_size=0.02, format='pdf'):
+    all_ratios = []
     for identifier in range(NUM_RUNS):
         path = class_def.complete_path(pickles_path, str(identifier), variants)
 
         with open(f"{path}{rel_path_y}", 'rb') as f:
             y = pickle.load(f)
 
-        increments = y[1] - y[0]
-        all_increments += increments[~np.isnan(increments)].tolist()
+        ratio = y[1] / y[0]
+        all_ratios += ratio[~np.isnan(ratio)].tolist()
 
-    fig, ax = plt.subplots()
-    ax.plot(np.random.random(len(all_increments)), all_increments, 'o')
-    ax.axhline(np.mean(all_increments), color='k')
-    ax.set_ylabel(y_label)
-    max_v = max(max(all_increments), -min(all_increments)) * 1.05
-    ax.set_ylim((-max_v, max_v))
+    # fig, ax = plt.subplots()
+    # ax.plot(np.random.random(len(all_ratios)), all_ratios, 'o')
+    # ax.axhline(np.mean(all_ratios), color='k')
+    # ax.set_ylabel(y_label)
+    # max_v = max(max(all_ratios), -min(all_ratios)) * 1.05
+    # ax.set_ylim((-max_v, max_v))
 
     fig, ax = plt.subplots(figsize=(4, 2.5), constrained_layout=True)
-    last_edge = max(-(min(all_increments) - 1), max(all_increments) + 1)
-    ax.hist(all_increments, bins=np.arange(-last_edge, last_edge + 1, 2), density=True)
-    ax.set_ylabel("Proportion")
-    ax.set_xlabel("Place field size at fast inst. speed minus\n"
-                  "place field size at slow inst. speed (cm)")
+    max_deviation = np.abs(np.array(all_ratios) - 1).max()
+    num_bins = int((2 * max_deviation / bin_size) // 2 * 2 + 1)
+    left_edge = 1 - num_bins * bin_size / 2
+    right_edge = 1 + num_bins * bin_size / 2
+
+    ax.hist(all_ratios, bins=np.linspace(left_edge, right_edge, num_bins + 1))
+    ax.axvline(np.mean(all_ratios), linestyle='dashed', color='k')
+    ax.set_ylabel("Count")
+    ax.set_xlabel(label)
 
     ax.spines.right.set_visible(False)
     ax.spines.top.set_visible(False)
@@ -117,32 +121,31 @@ if not os.path.exists(path):
 
 x_label = "Mean speed (cm/s)"
 
-plot("sizes", PlaceFields, x_label, "speeds", "Place field size (cm)", "sizes", "Position (cm)", "positions",
-     z_binned_average=True, z_bin_size=2)
-plot_speed_increments("size_increments", PlaceFields, r"$\Delta$ Place field size (cm)", "slow_and_fast_sizes")
-plot("shifts", PlaceFields, x_label, "shifts/speeds", "Place field peak shift (cm)", "shifts/shifts", "Position (cm)",
-     "shifts/positions", z_binned_average=True, z_bin_size=2)
-plot("densities", PlaceFields, x_label, "density/speeds", "Place field density (peaks/cm)", "density/densities",
-     alpha=0.5)
+# plot("sizes", PlaceFields, x_label, "speeds", "Place field size (cm)", "sizes", "Position (cm)", "positions",
+#      z_binned_average=True, z_bin_size=2)
+# plot_speed_ratios("size_increments", PlaceFields, "Fast / slow place field size", "slow_and_fast_sizes", bin_size=0.05)
+# plot("shifts", PlaceFields, x_label, "shifts/speeds", "Place field peak shift (cm)", "shifts/shifts", "Position (cm)",
+#      "shifts/positions", z_binned_average=True, z_bin_size=2)
+# plot("densities", PlaceFields, x_label, "density/speeds", "Place field density (peaks/cm)", "density/densities",
+#      alpha=0.5)
 # plot("separations", PlaceFields, x_label, "separation/speeds", "Place field separation (cm)",
 #      "separation/separations")
 
-plot("slopes", PhasePrecession, x_label, "speeds", "Inverse phase precession slope (cm/deg)", "slopes",
-     "Position (cm)", "positions", z_binned_average=True, z_bin_size=2)
-plot_speed_increments("slope_increments", PhasePrecession, r"$\Delta$ Inverse phase precession slope (cm/deg)",
-                      "slow_and_fast_slopes")
+# plot("slopes", PhasePrecession, x_label, "speeds", "Inverse phase precession slope (cm/deg)", "slopes",
+#      "Position (cm)", "positions", z_binned_average=True, z_bin_size=2)
+# plot_speed_ratios("slope_increments", PhasePrecession, "Fast / slow inverse phase precession", "slow_and_fast_slopes")
 
-plot("sweep lengths", ThetaSweeps, x_label, "speeds", "Theta sweep length (cm)", "lengths", "Position (cm)", "positions",
-     z_binned_average=True, z_bin_size=2, s=10, format='png')
-plot("ahead lengths", ThetaSweeps, x_label, "ahead_and_behind/ahead_speeds", "Theta sweep ahead length (cm)",
-     "ahead_and_behind/ahead_lengths", "Position (cm)", "ahead_and_behind/ahead_real_pos",
-     z_binned_average=True, z_bin_size=2, s=10, format='png')
+# plot("sweep lengths", ThetaSweeps, x_label, "speeds", "Theta sweep length (cm)", "lengths", "Position (cm)", "positions",
+#      z_binned_average=True, z_bin_size=2, s=10, format='png')
+# plot("ahead lengths", ThetaSweeps, x_label, "ahead_and_behind/ahead_speeds", "Theta sweep ahead length (cm)",
+#      "ahead_and_behind/ahead_lengths", "Position (cm)", "ahead_and_behind/ahead_real_pos",
+#      z_binned_average=True, z_bin_size=2, s=10, format='png')
 plot("behind lengths", ThetaSweeps, x_label, "ahead_and_behind/behind_speeds", "Theta sweep behind length (cm)",
      "ahead_and_behind/behind_lengths", "Position (cm)", "ahead_and_behind/behind_real_pos",
      z_binned_average=True, z_bin_size=2, s=10, format='png')
-plot("matched shifts", ThetaSweeps, "Place field shift (cm)", "ahead_and_behind/shifts",
-     "Theta sweep behind length (cm)", "ahead_and_behind/behind_lengths", "Position (cm)",
-     "ahead_and_behind/behind_real_pos", z_binned_average=True, z_bin_size=2, s=10, format='png',
-     extra_plotting=lambda ax: ax.plot((0, 20), (0, 20), linestyle='dashed', color='black'))
+# plot("matched shifts", ThetaSweeps, "Place field shift (cm)", "ahead_and_behind/shifts",
+#      "Theta sweep behind length (cm)", "ahead_and_behind/behind_lengths", "Position (cm)",
+#      "ahead_and_behind/behind_real_pos", z_binned_average=True, z_bin_size=2, s=10, format='png',
+#      extra_plotting=lambda ax: ax.plot((0, 20), (0, 20), linestyle='dashed', color='black'))
 
 plt.show()

@@ -52,8 +52,8 @@ class PhasePrecession(SmartSim):
 
     def fit_cloud(self, cloud):
         pos, phase = np.meshgrid(np.linspace(0, 1, cloud.shape[1]), np.linspace(0, 1, cloud.shape[0]))
-        not_nan = ~np.isnan(cloud)
-        return self.odr_fit(pos[not_nan], phase[not_nan], cloud[not_nan])
+        valid = ~np.isnan(cloud) & (cloud != 0)
+        return self.odr_fit(pos[valid], phase[valid], cloud[valid])
 
     @staticmethod
     def odr_fit(normalized_positions, normalized_phases, weights):
@@ -172,6 +172,7 @@ class PhasePrecession(SmartSim):
         clouds[:, positive] = clouds[:, positive] / occupancies[positive]
 
         slopes = np.full((2, self.num_units), np.nan)
+        # intercepts = np.full((2, self.num_units), np.nan)
 
         phase_span = self.phase_bin_size * (self.num_phase_bins - 1) * 180 / np.pi
         for i in range(2):
@@ -180,9 +181,32 @@ class PhasePrecession(SmartSim):
                 if all(bounds_ok):
                     slope, intercept = self.fit_cloud(cloud[:, bounds[0]:bounds[1]+1])
                     slopes[i, unit_num] = slope * phase_span / (self.spatial_bin_size * (bounds[1] - bounds[0]))
+                    # intercepts[i, unit_num] = intercept * phase_span
 
         slopes = 1/slopes
         self.maybe_pickle_results(slopes, "slow_and_fast_slopes")
+
+        # This is just to check
+        # unit = 80
+        # fig, ax = plt.subplots(3, sharey='all', sharex='all')
+        # bounds = self.fields.field_bound_indices[unit]
+        # ax[0].set_ylim(0, 360)
+        # ax[0].set_xlim(0, (bounds[1] - bounds[0])*self.spatial_bin_size)
+        # ax[0].matshow(clouds[unit, 0, :, bounds[0]:bounds[1]+1], origin='lower', aspect='auto',
+        #               extent=(0, (bounds[1]-bounds[0]) * self.spatial_bin_size, 0, 360))
+        # fit_x = self.fields.bins_x[bounds[0]:bounds[1] + 1]
+        # fit_x_rel = fit_x - self.fields.bins_x[bounds[0]]
+        # fit_y = intercepts[0, unit] + slopes[0, unit] * fit_x_rel
+        # ax[0].plot(fit_x_rel, fit_y, color='orange')
+        # ax[1].matshow(clouds[unit, 1, :, bounds[0]:bounds[1]+1], origin='lower', aspect='auto',
+        #               extent=(0, (bounds[1]-bounds[0]) * self.spatial_bin_size, 0, 360))
+        # fit_y = intercepts[1, unit] + slopes[1, unit] * fit_x_rel
+        # ax[1].plot(fit_x_rel, fit_y, color='orange')
+        # ax[2].matshow(self.clouds[unit, :, bounds[0]:bounds[1]+1], origin='lower', aspect='auto',
+        #               extent=(0, (bounds[1]-bounds[0]) * self.spatial_bin_size, 0, 360))
+        # fit_y = self.intercepts[unit] + self.slopes[unit] * fit_x_rel
+        # ax[2].plot(fit_x_rel, fit_y, color='orange')
+        # print(slopes[0, unit], slopes[1, unit])
 
         if plot:
             fig, ax = plt.subplots()
