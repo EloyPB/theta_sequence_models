@@ -128,7 +128,7 @@ class PhasePrecession(SmartSim):
         ax[-1].set_xlabel("Position (cm)")
         self.maybe_save_fig(fig, "clouds")
 
-    def slopes_vs_mean_speed(self, plot=True, colour_by_position=True):
+    def slopes_vs_mean_speed(self, plot=False, colour_by_position=True):
         speeds = []
         slopes = []
         positions = []
@@ -181,12 +181,13 @@ class PhasePrecession(SmartSim):
                     slope, intercept = self.fit_cloud(cloud[:, bounds[0]:bounds[1]+1])
                     slopes[i, unit_num] = slope * phase_span / (self.spatial_bin_size * (bounds[1] - bounds[0]))
 
+        slopes = 1/slopes
         self.maybe_pickle_results(slopes, "slow_and_fast_slopes")
 
         if plot:
             fig, ax = plt.subplots()
-            ax.plot(1/slopes, color='C7')
-            ax.plot(1/slopes, 'o', color='k')
+            ax.plot(slopes, color='C7')
+            ax.plot(slopes, 'o', color='k')
             ax.set_xticks((0, 1))
             ax.set_xticklabels(('Slow', 'Fast'))
             ax.set_ylabel("Inverse phase precession slope (cm/º)")

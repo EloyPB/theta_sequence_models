@@ -115,18 +115,29 @@ x_label = "Mean speed (cm/s)"
 
 plot("sizes", PlaceFields, x_label, "speeds", "Place field size (cm)", "sizes", "Position (cm)", "positions",
      z_binned_average=True, z_bin_size=2)
-# plot("densities", PlaceFields, x_label, "density/speeds", "Place field density (peaks/cm)", "density/densities",
-#      alpha=0.5)
+plot_speed_increments("size_increments", PlaceFields, r"$\Delta$ Place field size (cm)", "slow_and_fast_sizes")
+plot("shifts", PlaceFields, x_label, "shifts/speeds", "Place field peak shift (cm)", "shifts/shifts", "Position (cm)",
+     "shifts/positions", z_binned_average=True, z_bin_size=2)
+plot("densities", PlaceFields, x_label, "density/speeds", "Place field density (peaks/cm)", "density/densities",
+     alpha=0.5)
 # plot("separations", PlaceFields, x_label, "separation/speeds", "Place field separation (cm)",
 #      "separation/separations")
-# plot("shifts", PlaceFields, x_label, "shifts/speeds", "Place field peak shift (cm)", "shifts/shifts", "Position (cm)",
-#      "shifts/positions")
-# plot_speed_increments("size_increments", PlaceFields, r"$\Delta$ Place field size (cm)", "slow_and_fast_sizes")
 
-# plot("slopes", PhasePrecession, x_label, "speeds", "Inverse phase precession slope (cm/deg)", "slopes",
-#      "Position (cm)", "positions")
-#
-plot("sweeps", ThetaSweeps, x_label, "speeds", "Theta sweep length (cm)", "lengths", "Position (cm)", "positions",
+plot("slopes", PhasePrecession, x_label, "speeds", "Inverse phase precession slope (cm/deg)", "slopes",
+     "Position (cm)", "positions", z_binned_average=True, z_bin_size=2)
+plot_speed_increments("slope_increments", PhasePrecession, r"$\Delta$ Inverse phase precession slope (cm/deg)",
+                      "slow_and_fast_slopes")
+
+plot("sweep lengths", ThetaSweeps, x_label, "speeds", "Theta sweep length (cm)", "lengths", "Position (cm)", "positions",
+     z_binned_average=True, z_bin_size=2, s=10, format='png')
+plot("ahead lengths", ThetaSweeps, x_label, "ahead_and_behind/ahead_speeds", "Theta sweep ahead length (cm)",
+     "ahead_and_behind/ahead_lengths", "Position (cm)", "ahead_and_behind/ahead_real_pos",
+     z_binned_average=True, z_bin_size=2, s=10, format='png')
+plot("behind lengths", ThetaSweeps, x_label, "ahead_and_behind/behind_speeds", "Theta sweep behind length (cm)",
+     "ahead_and_behind/behind_lengths", "Position (cm)", "ahead_and_behind/behind_real_pos",
+     z_binned_average=True, z_bin_size=2, s=10, format='png')
+plot("matched shifts", ThetaSweeps, "Place field shift (cm)", "ahead_and_behind/shifts", "Theta sweep behind length (cm)",
+     "ahead_and_behind/behind_lengths", "Position (cm)", "ahead_and_behind/behind_real_pos",
      z_binned_average=True, z_bin_size=2, s=10, format='png')
 
 plt.show()

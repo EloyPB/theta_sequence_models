@@ -104,7 +104,7 @@ class ThetaSweeps(SmartSim):
         ax.legend(custom_lines, ['actual pos.', 'decoded pos.'], loc="upper left")
         self.maybe_save_fig(fig, "sweeps", dpi=500)
 
-    def length_vs_mean_speed(self, plot=True):
+    def length_vs_mean_speed(self, plot=False):
         speeds = []
         positions = []
         for start_index, end_index in zip(self.start_indices, self.end_indices):
@@ -178,6 +178,8 @@ class ThetaSweeps(SmartSim):
             else:
                 matched_shifts.append(np.nan)
 
+        self.maybe_pickle_results(matched_shifts, "shifts", sub_folder="ahead_and_behind")
+
         if plot:
             data = {'x': matched_shifts, 'y': self.behind_lengths}
             frame = pd.DataFrame(data, columns=['x', 'y'])
@@ -186,6 +188,7 @@ class ThetaSweeps(SmartSim):
             g.ax.plot((0, max_value), (0, max_value), linestyle='dashed', color='k', zorder=0)
             g.ax.set_xlabel("Place field shift (cm)")
             g.ax.set_ylabel("Behind length (cm)")
+            self.maybe_save_fig(g.fig, "behind_length_vs_peak_shift")
 
 
 if __name__ == "__main__":

@@ -16,21 +16,21 @@ def analyze(identifier):
 
     pf = PlaceFields.current_instance(config)
     pf.plot_activations(fig_size=(4, 4))
-    pf.sizes_vs_mean_speed()
+    pf.sizes_vs_mean_speed(plot=True)
     pf.slow_and_fast_sizes()
-    pf.field_peak_shifts()
+    pf.field_peak_shifts(plot=True)
     pf.density_vs_mean_speed()
     del pf
 
     pp = PhasePrecession.current_instance(config)
-    pp.slopes_vs_mean_speed()
+    pp.slopes_vs_mean_speed(plot=True)
     pp.fast_and_slow_slopes()
     del pp
 
     sweeps = ThetaSweeps.current_instance(config)
-    sweeps.length_vs_mean_speed()
-    sweeps.ahead_and_behind_vs_mean_speed()
-    sweeps.behind_length_vs_peak_shift()
+    sweeps.length_vs_mean_speed(plot=True)
+    sweeps.ahead_and_behind_vs_mean_speed(plot=True)
+    sweeps.behind_length_vs_peak_shift(plot=True)
 
 
 # RUN ANALYSES

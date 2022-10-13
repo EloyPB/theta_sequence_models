@@ -5,8 +5,7 @@ from socket import gethostname
 
 NUM_RUNS = 8
 
-variants = {}
-# variants = {'Network': 'LogPosInput'}
+variants = {'Network': 'Log80'}
 
 
 # DEFINE PATHS (change according to your file system!)
