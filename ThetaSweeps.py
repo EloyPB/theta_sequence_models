@@ -47,9 +47,8 @@ class ThetaSweeps(SmartSim):
 
         x = np.arange(self.network.theta_cycle_steps)
 
-        for start, end in zip(self.network.theta_cycle_starts[self.decoder.first_cycle:-1],
-                              self.network.theta_cycle_starts[self.decoder.first_cycle+1:]):
-            indices_max_cycle = indices_max[start-self.decoder.first_index: end-self.decoder.first_index]
+        for start, end in zip(self.network.theta_cycle_starts[:-1], self.network.theta_cycle_starts[1:]):
+            indices_max_cycle = indices_max[start: end]
             if (indices_max_cycle == 0).any() or (indices_max_cycle == self.decoder.fields.num_bins - 1).any():
                 continue
 
@@ -57,29 +56,35 @@ class ThetaSweeps(SmartSim):
             if np.sum(ok) < self.min_steps_ok:
                 continue
 
+            abs_start = start + self.network.first_logged_step
+            abs_end = end + self.network.first_logged_step
+
             fit = linregress(x[ok], indices_max_cycle[ok])
             self.slopes.append(fit.slope)
             self.intercepts.append(fit.intercept)
-            self.fit_starts.append(start)
+            self.fit_starts.append(abs_start)
             left_offset = np.argmax(ok)
-            self.start_indices.append(start + left_offset)
+            self.start_indices.append(abs_start + left_offset)
             right_offset = np.argmax(ok[::-1])
-            self.end_indices.append(end - right_offset)
+            self.end_indices.append(abs_end - right_offset)
             self.lengths.append(fit.slope * (self.end_indices[-1] - self.start_indices[-1] - 1) * self.fields.bin_size)
 
             self.trajectory_starts.append(np.nanmean(indices_max_cycle[left_offset:left_offset+self.side_steps]))
             self.trajectory_ends.append(np.nanmean(indices_max_cycle[-right_offset - self.side_steps:-right_offset]))
-            self.real_pos_starts.append(np.mean(self.decoder.track.x_log[start+left_offset:start+left_offset+self.side_steps]))
-            self.real_pos_ends.append(np.mean(self.decoder.track.x_log[end-right_offset-self.side_steps:end-right_offset]))
+            self.real_pos_starts.append(np.mean(self.decoder.track.x_log[abs_start+left_offset:abs_start+left_offset+self.side_steps]))
+            self.real_pos_ends.append(np.mean(self.decoder.track.x_log[abs_end-right_offset-self.side_steps:abs_end-right_offset]))
 
     def plot(self, t_start=0, t_end=None):
         fig, ax = self.decoder.plot(t_start, t_end)
         fit_x = np.arange(self.network.theta_cycle_steps)
-        first_index = int(t_start / self.track.dt)
+
+        first_index = max(self.network.first_logged_step, int(t_start / self.track.dt))
         if t_end is None:
-            last_index = self.network.theta_cycle_starts[-1]
+            last_index = self.network.theta_cycle_starts[-1] + self.network.first_logged_step
         else:
-            last_index = int(t_end / self.track.dt)
+            last_index = min(self.network.theta_cycle_starts[-1] + self.network.first_logged_step,
+                             int(t_end / self.track.dt))
+
         for cycle_num, (fit_start, start_index, end_index, slope, intercept) \
                 in enumerate(zip(self.fit_starts, self.start_indices, self.end_indices, self.slopes, self.intercepts)):
             if start_index > first_index and end_index < last_index:
@@ -185,13 +190,13 @@ class ThetaSweeps(SmartSim):
 
 if __name__ == "__main__":
     plt.rcParams.update({'font.size': 11})
-    variants = {'Network': 'LogPosInput'}
+    variants = {'Network': 'Log80'}
 
-    sweeps = ThetaSweeps.current_instance(Config(identifier=2, variants=variants, pickle_instances=True, save_figures=False,
+    sweeps = ThetaSweeps.current_instance(Config(identifier=1, variants=variants, pickle_instances=True, save_figures=False,
                                                  figure_format='png'))
-    # sweeps.plot(t_start=150.62)
+    sweeps.plot(t_start=150.62)
     # sweeps.plot(t_start=151.256, t_end=151.632)
-    # sweeps.length_vs_mean_speed()
+    sweeps.length_vs_mean_speed()
 
     sweeps.ahead_and_behind_vs_mean_speed(plot=True)
     sweeps.behind_length_vs_peak_shift(plot=True)

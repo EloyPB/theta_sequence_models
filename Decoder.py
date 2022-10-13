@@ -15,10 +15,7 @@ class Decoder(SmartSim):
         self.track = self.network.track
         self.min_peak = min_peak
 
-        self.first_cycle = np.searchsorted(self.network.theta_cycle_starts, self.fields.first_t_step)
-        self.first_index = self.network.theta_cycle_starts[self.first_cycle]
-        num_time_bins = self.network.theta_cycle_starts[-1] - self.network.theta_cycle_starts[self.first_cycle]
-
+        num_time_bins = self.network.theta_cycle_starts[-1]
         self.correlations = np.empty((num_time_bins, self.fields.num_bins))
 
         self.decode()
@@ -31,29 +28,25 @@ class Decoder(SmartSim):
         mean_y = np.mean(self.fields.activations, axis=0)
         denom_y = np.sqrt(np.sum(self.fields.activations**2, axis=0) - n * mean_y**2)
 
-        i = 0
-        for start, end in zip(self.network.theta_cycle_starts[self.first_cycle:-1],
-                              self.network.theta_cycle_starts[self.first_cycle+1:]):
-            for t in range(start, end):
-                x = self.network.act_out_log[t, :self.fields.last_unit]
+        for t_step in range(self.network.theta_cycle_starts[-1]):
+            x = self.network.act_out_log[t_step, :self.fields.last_unit]
 
-                if np.max(x) < self.min_peak:
-                    self.correlations[i] = np.nan
-                else:
-                    mean_x = np.mean(x)
-                    denom_x = np.sqrt(np.sum(x ** 2) - n * mean_x ** 2)
-                    self.correlations[i] = (x @ self.fields.activations - n * mean_x * mean_y) / (denom_x * denom_y)
-
-                i += 1
+            if np.max(x) < self.min_peak:
+                self.correlations[t_step] = np.nan
+            else:
+                mean_x = np.mean(x)
+                denom_x = np.sqrt(np.sum(x ** 2) - n * mean_x ** 2)
+                self.correlations[t_step] = (x @ self.fields.activations - n * mean_x * mean_y) / (denom_x * denom_y)
 
     def plot(self, t_start=0, t_end=None):
         fig, ax = plt.subplots()
 
-        first_index = max(self.first_index, int(t_start / self.track.dt))
+        first_index = max(self.network.first_logged_step, int(t_start / self.track.dt))
         if t_end is None:
-            last_index = self.network.theta_cycle_starts[-1]
+            last_index = self.network.theta_cycle_starts[-1] + self.network.first_logged_step
         else:
-            last_index = min(self.network.theta_cycle_starts[-1], int(t_end / self.track.dt))
+            last_index = min(self.network.theta_cycle_starts[-1] + self.network.first_logged_step,
+                             int(t_end / self.track.dt))
 
         t_start = first_index * self.track.dt
         t_end = last_index * self.track.dt
@@ -61,7 +54,8 @@ class Decoder(SmartSim):
 
         c_map = copy.copy(plt.cm.get_cmap('viridis'))
         c_map.set_bad(color='C7')
-        mat = ax.matshow(self.correlations[first_index-self.first_index:last_index-self.first_index].T,
+        mat = ax.matshow(self.correlations[first_index-self.network.first_logged_step:
+                                           last_index-self.network.first_logged_step].T,
                          aspect='auto', origin='lower', extent=extent, cmap=c_map)
         ax.xaxis.set_ticks_position('bottom')
         c_bar = fig.colorbar(mat)
@@ -75,7 +69,7 @@ class Decoder(SmartSim):
 
 
 if __name__ == "__main__":
-    decoder = Decoder.current_instance(Config(identifier=1, pickle_instances=True))
+    decoder = Decoder.current_instance(Config(identifier=1, variants={'Network': 'Log80'}, pickle_instances=True))
     # decoder.network.plot_activities(apply_f=True)
     decoder.plot()
     plt.show()

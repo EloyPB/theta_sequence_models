@@ -6,12 +6,10 @@ from Network import Network, LinearTrack
 from generic.smart_sim import Config, SmartSim
 
 
-# todo: calculate each field's mean speed only once
-
 class PlaceFields(SmartSim):
     dependencies = [Network]
 
-    def __init__(self, bin_size, sigma, min_peak, threshold, prominence_threshold=0.33, discard=0, last_unit=None,
+    def __init__(self, bin_size, sigma, min_peak, threshold, prominence_threshold=0.33, last_unit=None,
                  dens_window_size=10, dens_window_stride=2, config=Config(), d={}):
         SmartSim.__init__(self, config, d)
 
@@ -26,7 +24,6 @@ class PlaceFields(SmartSim):
         self.min_peak = min_peak
         self.threshold = threshold
         self.prominence_threshold = prominence_threshold
-        self.first_t_step = int(discard / self.track.dt)
         self.last_unit = self.network.num_units if last_unit is None else last_unit
         self.dens_window_size = dens_window_size
         self.dens_window_stride = dens_window_stride
@@ -47,10 +44,10 @@ class PlaceFields(SmartSim):
 
     def compute_activations(self):
         activations = np.zeros(self.activations.shape)
-        for t_step in range(self.first_t_step, len(self.track.x_log)):
+        for t_step in range(self.network.first_logged_step, len(self.track.x_log)):
             bin_num = int(self.track.x_log[t_step] / self.bin_size)
             self.occupancies[bin_num] += 1
-            activations[:, bin_num] += self.network.act_out_log[t_step][:self.last_unit]
+            activations[:, bin_num] += self.network.act_out_log[t_step - self.network.first_logged_step][:self.last_unit]
         self.activations = activations / self.occupancies
 
         if self.sigma > 0:
@@ -211,9 +208,9 @@ class PlaceFields(SmartSim):
         """Compute 'true' place fields based on each cell's positional input.
         """
         pos_activations = np.zeros(self.pos_activations.shape)
-        for t_step in range(self.first_t_step, len(self.track.x_log)):
+        for t_step in range(self.network.first_logged_step, len(self.track.x_log)):
             bin_num = int(self.track.x_log[t_step] / self.bin_size)
-            pos_activations[:, bin_num] += self.network.pos_input_log[t_step][:self.last_unit]
+            pos_activations[:, bin_num] += self.network.pos_input_log[t_step - self.network.first_logged_step][:self.last_unit]
         self.pos_activations = pos_activations / self.occupancies
 
         if self.sigma > 0:
@@ -282,12 +279,12 @@ class PlaceFields(SmartSim):
     def slow_and_fast_sizes(self, plot=False):
         occupancies = np.zeros((2, self.num_bins), dtype=int) + 0.1
         activations = np.zeros((self.last_unit, 2, self.num_bins))
-        for t_step in range(self.first_t_step, len(self.track.x_log)):
+        for t_step in range(self.network.first_logged_step, len(self.track.x_log)):
             bin_num = int(self.track.x_log[t_step] / self.bin_size)
             speed_factor = self.track.speed_factor_log[t_step]
             i = int(speed_factor > 1)
             occupancies[i, bin_num] += 1
-            activations[:, i, bin_num] += self.network.act_out_log[t_step][:self.last_unit]
+            activations[:, i, bin_num] += self.network.act_out_log[t_step - self.network.first_logged_step][:self.last_unit]
         activations /= occupancies
 
         sizes = np.full((2, self.last_unit), np.nan)
@@ -316,12 +313,12 @@ if __name__ == "__main__":
 
     variants = {
         # 'LinearTrack': 'Many',
-        # 'Network': 'LogPosInput'
+        'Network': 'Log80'
     }
     pf = PlaceFields.current_instance(Config(identifier=1, variants=variants, pickle_instances=True,
                                              save_figures=False, figure_format='pdf'))
     # pf.plot_activations(fig_size=(4, 4))
-    # pf.sizes_vs_mean_speed(colour_by_position=True)
+    pf.sizes_vs_mean_speed(colour_by_position=True, plot=True)
     # pf.density_vs_mean_speed()
 
     # pf.compute_true_fields()

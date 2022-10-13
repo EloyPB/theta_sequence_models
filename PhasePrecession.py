@@ -32,8 +32,8 @@ class PhasePrecession(SmartSim):
         occupancies = np.zeros((self.num_phase_bins, self.num_spatial_bins))
         clouds = np.zeros_like(self.clouds)
 
-        for t_step in range(self.fields.first_t_step, len(self.track.x_log)):
-            spatial_bin_num = int(self.track.x_log[t_step] / self.spatial_bin_size)
+        for t_step in range(len(self.network.act_out_log)):
+            spatial_bin_num = int(self.track.x_log[t_step + self.network.first_logged_step] / self.spatial_bin_size)
             phase_bin_num = int(self.network.theta_phase_log[t_step] / self.phase_bin_size)
             occupancies[phase_bin_num, spatial_bin_num] += 1
             clouds[:, phase_bin_num, spatial_bin_num] += self.network.act_out_log[t_step][:self.num_units]
@@ -160,10 +160,10 @@ class PhasePrecession(SmartSim):
         occupancies = np.zeros((2, self.num_phase_bins, self.num_spatial_bins))
         clouds = np.zeros((self.num_units, 2, self.num_phase_bins, self.num_spatial_bins))
 
-        for t_step in range(self.fields.first_t_step, len(self.track.x_log)):
-            spatial_bin_num = int(self.track.x_log[t_step] / self.spatial_bin_size)
+        for t_step in range(len(self.network.act_out_log)):
+            spatial_bin_num = int(self.track.x_log[t_step + self.network.first_logged_step] / self.spatial_bin_size)
             phase_bin_num = int(self.network.theta_phase_log[t_step] / self.phase_bin_size)
-            speed_factor = self.track.speed_factor_log[t_step]
+            speed_factor = self.track.speed_factor_log[t_step + self.network.first_logged_step]
             i = int(speed_factor > 1)
             occupancies[i, phase_bin_num, spatial_bin_num] += 1
             clouds[:, i, phase_bin_num, spatial_bin_num] += self.network.act_out_log[t_step][:self.num_units]
@@ -196,7 +196,7 @@ class PhasePrecession(SmartSim):
 if __name__ == "__main__":
     plt.rcParams.update({'font.size': 11})
 
-    pp = PhasePrecession.current_instance(Config(variants={'LinearTrack': 'ManyLaps'}, identifier=1,
+    pp = PhasePrecession.current_instance(Config(variants={'LinearTrack': 'ManyLaps', 'Network': 'Log80'}, identifier=1,
                                                  pickle_instances=True, save_figures=False, figure_format='pdf'))
     # for unit in [40, 60, 80, 100, 120]:
     #     pp.plot_cloud(unit)

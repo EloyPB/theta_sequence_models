@@ -31,8 +31,8 @@ class Network(SmartSim):
         self.num_units = num_units
         self.tau = tau
         self.dt_over_tau = self.track.dt / tau
-        self.first_t_step = int(log_after / self.track.dt)
-        logged_steps = len(self.track.x_log) - self.first_t_step
+        self.first_logged_step = int(log_after / self.track.dt)
+        logged_steps = len(self.track.x_log) - self.first_logged_step
 
         # initialize recurrent weights
         self.w_rec = np.empty((num_units, num_units))
@@ -110,13 +110,14 @@ class Network(SmartSim):
                 last_lap_step = len(self.track.x_log)
 
             for t_step in range(lap_start_step, last_lap_step):
-                i = t_step - self.first_t_step
+                i = t_step - self.first_logged_step
 
                 # compute theta phase and theta inhibition
                 theta_phase += self.theta_phase_inc
                 if theta_phase > TWO_PI:
                     theta_phase -= TWO_PI
-                    self.theta_cycle_starts.append(i)
+                    if i >= 0:
+                        self.theta_cycle_starts.append(i)
                 theta = (-np.exp(self.theta_concentration * np.cos(theta_phase))
                          * self.theta_multiplier + self.theta_max)
 
@@ -166,8 +167,8 @@ class Network(SmartSim):
 
     def plot_activities(self, t_start=0, t_end=None, first_unit=0, last_unit=None, apply_f=False, pos_input=False,
                         theta=False, speed=False, fig_size=(6.4, 4.8)):
-        index_start = max(int(t_start / self.track.dt) - self.first_t_step, 0)
-        index_end = int(t_end / self.track.dt) - self.first_t_step if t_end is not None else len(self.act_out_log)
+        index_start = max(int(t_start / self.track.dt) - self.first_logged_step, 0)
+        index_end = int(t_end / self.track.dt) - self.first_logged_step if t_end is not None else len(self.act_out_log)
 
         if last_unit is None:
             last_unit = self.num_units
@@ -181,8 +182,8 @@ class Network(SmartSim):
             v_min = act_log.min()
             v_max = act_log.max()
 
-        extent = ((index_start + self.first_t_step) * self.track.dt - self.track.dt / 2,
-                  (index_end + self.first_t_step) * self.track.dt - self.track.dt / 2,
+        extent = ((index_start + self.first_logged_step) * self.track.dt - self.track.dt / 2,
+                  (index_end + self.first_logged_step) * self.track.dt - self.track.dt / 2,
                   first_unit - 0.5, last_unit - 0.5)
 
         rows = 2 + theta + speed
@@ -218,15 +219,15 @@ class Network(SmartSim):
 
         if theta:
             ax1 = fig.add_subplot(spec[2, 0], sharex=ax0)
-            time = np.arange(self.first_t_step, self.first_t_step + len(self.act_out_log)) * self.track.dt
+            time = np.arange(self.first_logged_step, self.first_logged_step + len(self.act_out_log)) * self.track.dt
             ax1.plot(time, self.theta_log)
             ax1.set_ylabel("Theta")
             ax1.set_xlabel("Time (s)")
 
         if speed:
             ax2 = fig.add_subplot(spec[2 + theta, 0], sharex=ax0)
-            time = np.arange(self.first_t_step, self.first_t_step + len(self.act_out_log)) * self.track.dt
-            ax2.plot(time, self.track.speed_log[self.first_t_step:])
+            time = np.arange(self.first_logged_step, self.first_logged_step + len(self.act_out_log)) * self.track.dt
+            ax2.plot(time, self.track.speed_log[self.first_logged_step:])
             # max_v = max(max(self.track.speed_log) - 1, 1 - min(self.track.speed_log)) * 1.05
             # ax2.set_ylim(1 - max_v, 1 + max_v)
             ax2.set_ylabel("Speed (cm/s)")
@@ -238,8 +239,8 @@ class Network(SmartSim):
         self.maybe_save_fig(fig, "activities", dpi=500)
 
     def plot_dynamics(self, t_start=0, t_end=None, first_unit=0, last_unit=None, apply_f=False):
-        index_start = max(int(t_start / self.track.dt) - self.first_t_step, 0)
-        index_end = int(t_end / self.track.dt) - self.first_t_step if t_end is not None else len(self.act_out_log)
+        index_start = max(int(t_start / self.track.dt) - self.first_logged_step, 0)
+        index_end = int(t_end / self.track.dt) - self.first_logged_step if t_end is not None else len(self.act_out_log)
 
         if last_unit is None:
             last_unit = self.num_units
@@ -254,8 +255,8 @@ class Network(SmartSim):
             v_max = act_log.max()
 
         foreground = colors.LinearSegmentedColormap.from_list('f', [(0, 0, 0, 0), (1, 1, 1, 1)], N=100)
-        extent = ((index_start + self.first_t_step) * self.track.dt - self.track.dt / 2,
-                  (index_end + self.first_t_step) * self.track.dt - self.track.dt / 2,
+        extent = ((index_start + self.first_logged_step) * self.track.dt - self.track.dt / 2,
+                  (index_end + self.first_logged_step) * self.track.dt - self.track.dt / 2,
                   first_unit - 0.5, last_unit - 0.5)
 
         fig = plt.figure(constrained_layout=True)
