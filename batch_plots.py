@@ -19,7 +19,8 @@ plt.rcParams.update({'font.size': 11})
 
 
 def plot(name, class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path_y, z_label="", rel_path_z=None,
-         z_binned_average=False, z_bin_size=1, s=18, alpha=1., fig_size=(4, 3.5), format='pdf', z_min=0, z_max=200):
+         z_binned_average=False, z_bin_size=1, s=18, alpha=1., fig_size=(4, 3.5), format='pdf', z_min=0, z_max=200,
+         extra_plotting=None):
 
     def load(rel_path):
         with open(f"{path}{rel_path}", 'rb') as f:
@@ -31,10 +32,10 @@ def plot(name, class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path
 
     for identifier in range(NUM_RUNS):
         path = class_def.complete_path(pickles_path, str(identifier), variants)
-        all_x += load(rel_path_x)
-        all_y += load(rel_path_y)
+        all_x += list(load(rel_path_x))
+        all_y += list(load(rel_path_y))
         if rel_path_z:
-            all_z += load(rel_path_z)
+            all_z += list(load(rel_path_z))
 
     fig, ax = plt.subplots(figsize=fig_size, constrained_layout=True)
     sc = ax.scatter(all_x, all_y, c=all_z if len(all_z) else None, s=s, alpha=alpha, edgecolors='none',
@@ -72,6 +73,9 @@ def plot(name, class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path
     ax.set_ylabel(y_label)
     ax.spines.right.set_visible(False)
     ax.spines.top.set_visible(False)
+
+    if extra_plotting is not None:
+        extra_plotting(ax)
 
     fig.savefig(f"{figures_path}/ALL/{name}.{format}", dpi=400)
 
@@ -136,8 +140,9 @@ plot("ahead lengths", ThetaSweeps, x_label, "ahead_and_behind/ahead_speeds", "Th
 plot("behind lengths", ThetaSweeps, x_label, "ahead_and_behind/behind_speeds", "Theta sweep behind length (cm)",
      "ahead_and_behind/behind_lengths", "Position (cm)", "ahead_and_behind/behind_real_pos",
      z_binned_average=True, z_bin_size=2, s=10, format='png')
-plot("matched shifts", ThetaSweeps, "Place field shift (cm)", "ahead_and_behind/shifts", "Theta sweep behind length (cm)",
-     "ahead_and_behind/behind_lengths", "Position (cm)", "ahead_and_behind/behind_real_pos",
-     z_binned_average=True, z_bin_size=2, s=10, format='png')
+plot("matched shifts", ThetaSweeps, "Place field shift (cm)", "ahead_and_behind/shifts",
+     "Theta sweep behind length (cm)", "ahead_and_behind/behind_lengths", "Position (cm)",
+     "ahead_and_behind/behind_real_pos", z_binned_average=True, z_bin_size=2, s=10, format='png',
+     extra_plotting=lambda ax: ax.plot((0, 20), (0, 20), linestyle='dashed', color='black'))
 
 plt.show()
