@@ -135,17 +135,17 @@ x_label = "Mean speed (cm/s)"
 #      "Position (cm)", "positions", z_binned_average=True, z_bin_size=2)
 # plot_speed_ratios("slope_increments", PhasePrecession, "Fast / slow inverse phase precession", "slow_and_fast_slopes")
 
-# plot("sweep lengths", ThetaSweeps, x_label, "speeds", "Theta sweep length (cm)", "lengths", "Position (cm)", "positions",
-#      z_binned_average=True, z_bin_size=2, s=10, format='png')
-# plot("ahead lengths", ThetaSweeps, x_label, "ahead_and_behind/ahead_speeds", "Theta sweep ahead length (cm)",
-#      "ahead_and_behind/ahead_lengths", "Position (cm)", "ahead_and_behind/ahead_real_pos",
-#      z_binned_average=True, z_bin_size=2, s=10, format='png')
+plot("sweep lengths", ThetaSweeps, x_label, "speeds", "Theta sweep length (cm)", "lengths", "Position (cm)", "positions",
+     z_binned_average=True, z_bin_size=2, s=10, format='png')
+plot("ahead lengths", ThetaSweeps, x_label, "ahead_and_behind/ahead_speeds", "Theta sweep ahead length (cm)",
+     "ahead_and_behind/ahead_lengths", "Position (cm)", "ahead_and_behind/ahead_real_pos",
+     z_binned_average=True, z_bin_size=2, s=10, format='png')
 plot("behind lengths", ThetaSweeps, x_label, "ahead_and_behind/behind_speeds", "Theta sweep behind length (cm)",
      "ahead_and_behind/behind_lengths", "Position (cm)", "ahead_and_behind/behind_real_pos",
      z_binned_average=True, z_bin_size=2, s=10, format='png')
-# plot("matched shifts", ThetaSweeps, "Place field shift (cm)", "ahead_and_behind/shifts",
-#      "Theta sweep behind length (cm)", "ahead_and_behind/behind_lengths", "Position (cm)",
-#      "ahead_and_behind/behind_real_pos", z_binned_average=True, z_bin_size=2, s=10, format='png',
-#      extra_plotting=lambda ax: ax.plot((0, 20), (0, 20), linestyle='dashed', color='black'))
+plot("matched shifts", ThetaSweeps, "Place field shift (cm)", "ahead_and_behind/shifts",
+     "Theta sweep behind length (cm)", "ahead_and_behind/behind_lengths", "Position (cm)",
+     "ahead_and_behind/behind_real_pos", z_binned_average=True, z_bin_size=2, s=10, format='png',
+     extra_plotting=lambda ax: ax.plot((0, 20), (0, 20), linestyle='dashed', color='black'))
 
 plt.show()

@@ -22,15 +22,15 @@ def analyze(identifier):
     # pf.density_vs_mean_speed()
     # del pf
 
-    pp = PhasePrecession.current_instance(config)
+    # pp = PhasePrecession.current_instance(config)
     # pp.slopes_vs_mean_speed(plot=True)
-    pp.fast_and_slow_slopes()
-    del pp
+    # pp.fast_and_slow_slopes()
+    # del pp
 
-    # sweeps = ThetaSweeps.current_instance(config)
-    # sweeps.length_vs_mean_speed(plot=True)
-    # sweeps.ahead_and_behind_vs_mean_speed(plot=True)
-    # sweeps.behind_length_vs_peak_shift(plot=True)
+    sweeps = ThetaSweeps.current_instance(config)
+    sweeps.length_vs_mean_speed(plot=True)
+    sweeps.ahead_and_behind_vs_mean_speed(plot=True)
+    sweeps.behind_length_vs_peak_shift(plot=True)
 
 
 # RUN ANALYSES
