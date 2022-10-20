@@ -3,7 +3,7 @@ import sys
 from socket import gethostname
 
 
-NUM_RUNS = 8
+NUM_RUNS = 10
 
 variants = {'Network': 'Log80'}
 

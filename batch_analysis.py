@@ -14,18 +14,18 @@ def analyze(identifier):
                     figures_root_path=figures_path, pickle_instances=True, pickle_results=True,
                     pickles_root_path=pickles_path)
 
-    # pf = PlaceFields.current_instance(config)
-    # pf.plot_activations(fig_size=(4, 4))
-    # pf.sizes_vs_mean_speed(plot=True)
-    # pf.slow_and_fast_sizes()
-    # pf.field_peak_shifts(plot=True)
-    # pf.density_vs_mean_speed()
-    # del pf
+    pf = PlaceFields.current_instance(config)
+    pf.plot_activations(fig_size=(4, 4))
+    pf.sizes_vs_mean_speed(plot=True)
+    pf.slow_and_fast_sizes()
+    pf.field_peak_shifts(plot=True)
+    pf.density_vs_mean_speed()
+    del pf
 
-    # pp = PhasePrecession.current_instance(config)
-    # pp.slopes_vs_mean_speed(plot=True)
-    # pp.fast_and_slow_slopes()
-    # del pp
+    pp = PhasePrecession.current_instance(config)
+    pp.slopes_vs_mean_speed(plot=True)
+    pp.fast_and_slow_slopes()
+    del pp
 
     sweeps = ThetaSweeps.current_instance(config)
     sweeps.length_vs_mean_speed(plot=True)
