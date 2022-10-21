@@ -199,7 +199,8 @@ class Network(SmartSim):
 
         ax0.set_title("Network activities")
         ax0.set_ylabel("Unit #")
-        ax0.set_xlabel("Time (s)")
+        if rows == 2:
+            ax0.set_xlabel("Time (s)")
         color_bar = plt.colorbar(mat, cax=fig.add_subplot(spec[1, 1]))
         color_bar.set_label("Activation")
         color_bar.locator = ticker.MultipleLocator(0.5)
@@ -232,6 +233,8 @@ class Network(SmartSim):
             # ax2.set_ylim(1 - max_v, 1 + max_v)
             ax2.set_ylabel("Speed (cm/s)")
             ax2.set_xlabel("Time (s)")
+            ax2.spines.right.set_visible(False)
+            ax2.spines.top.set_visible(False)
 
         ax0.xaxis.set_ticks_position('bottom')
         ax0.set_xlim(*extent)
@@ -331,12 +334,12 @@ class Network(SmartSim):
 if __name__ == "__main__":
     plt.rcParams.update({'font.size': 11})
 
-    config = Config(identifier=1, variants={
-        'LinearTrack': 'OneLap',
+    config = Config(identifier=2, variants={
+        # 'LinearTrack': 'OneLap',
         # 'LinearTrack': 'FixSpeed',
         'Network': 'LogAll'
         # 'Network': 'LogPosInput80'
-    }, pickle_instances=True, save_figures=False, figure_format='pdf')
+    }, pickle_instances=True, save_figures=True, figure_format='png')
     network = Network.current_instance(config)
 
     # network.track.plot_trajectory()
@@ -354,7 +357,7 @@ if __name__ == "__main__":
     #                         first_unit=28, last_unit=78)
 
     # all runs:
-    network.plot_activities(apply_f=1, pos_input=0, theta=0, speed=1, last_unit=200, fig_size=(8, 4.8))
+    network.plot_activities(apply_f=1, pos_input=0, theta=0, speed=1, last_unit=200, t_end=99.25, fig_size=(8, 4.8))
     # zoom in on one run at the end:
     # network.plot_activities(apply_f=1, pos_input=1, theta=0, speed=1, first_unit=34, last_unit=84, t_start=140, t_end=141.015)
 
