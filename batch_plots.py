@@ -11,16 +11,17 @@ from batch_config import *
 from PlaceFields import PlaceFields
 from PhasePrecession import PhasePrecession
 from ThetaSweeps import ThetaSweeps
+from small_plots import *
 
 
 # PLOT RESULTS
 
-plt.rcParams.update({'font.size': 11})
+# plt.rcParams.update({'font.size': 11})
 
 
 def plot(name, class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path_y, z_label="", rel_path_z=None,
          z_binned_average=False, z_bin_size=1, z_bin_min_count=8, x_binned_average=False, x_bin_size=2,
-         x_bin_min_count=8, s=18, alpha=1., fig_size=(4, 3.5), format='pdf', z_min=0, z_max=200, extra_plotting=None):
+         x_bin_min_count=8, s=10, alpha=1., fig_size=(6*CM, 5*CM), format='pdf', z_min=0, z_max=200, extra_plotting=None):
 
     def load(rel_path):
         with open(f"{path}{rel_path}", 'rb') as f:
@@ -55,7 +56,7 @@ def plot(name, class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path
             y_averages[index] += y
             counts[index] += 1
 
-        valid = counts >= z_bin_min_count
+        valid = counts >= x_bin_min_count
         y_averages[valid] = y_averages[valid] / counts[valid]
         ax.plot(x_centers[valid], y_averages[valid], color='k', linewidth=2)
 
@@ -107,7 +108,8 @@ def plot(name, class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path
     fig.savefig(f"{figures_path}/ALL/{name}.{format}", dpi=400)
 
 
-def plot_speed_ratios(name, class_def: Type[SmartSim], label, rel_path_y, bin_size=0.02, format='pdf'):
+def plot_speed_ratios(name, class_def: Type[SmartSim], x_label, title, rel_path_y, bin_size=0.02, format='pdf',
+                      fig_size=(4*CM, 3*CM)):
     all_ratios = []
     for identifier in range(NUM_RUNS):
         path = class_def.complete_path(pickles_path, str(identifier), variants)
@@ -125,16 +127,18 @@ def plot_speed_ratios(name, class_def: Type[SmartSim], label, rel_path_y, bin_si
     # max_v = max(max(all_ratios), -min(all_ratios)) * 1.05
     # ax.set_ylim((-max_v, max_v))
 
-    fig, ax = plt.subplots(figsize=(4, 2.5), constrained_layout=True)
+    fig, ax = plt.subplots(figsize=fig_size, constrained_layout=True)
     max_deviation = np.abs(np.array(all_ratios) - 1).max()
     num_bins = int((2 * max_deviation / bin_size) // 2 * 2 + 1)
     left_edge = 1 - num_bins * bin_size / 2
     right_edge = 1 + num_bins * bin_size / 2
 
     ax.hist(all_ratios, bins=np.linspace(left_edge, right_edge, num_bins + 1))
-    ax.axvline(np.mean(all_ratios), linestyle='dashed', color='k')
+    ax.axvline(1, color='k', linewidth=0.75)
+    ax.axvline(np.mean(all_ratios), linestyle='dotted', color='lightgray')
     ax.set_ylabel("Count")
-    ax.set_xlabel(label)
+    ax.set_xlabel(x_label)
+    ax.set_title(title)
 
     ax.spines.right.set_visible(False)
     ax.spines.top.set_visible(False)
@@ -150,17 +154,17 @@ x_label = "Mean speed (cm/s)"
 
 # plot("sizes", PlaceFields, x_label, "speeds", "Place field size (cm)", "sizes", "Position (cm)", "positions",
 #      z_binned_average=True, z_bin_size=2)
-# plot_speed_ratios("size_increments", PlaceFields, "Fast / slow place field size", "slow_and_fast_sizes", bin_size=0.05)
+plot_speed_ratios("size_increments", PlaceFields, "Fast / slow", "Place field size", "slow_and_fast_sizes", bin_size=0.05)
 # plot("shifts", PlaceFields, x_label, "shifts/speeds", "Place field peak shift (cm)", "shifts/shifts", "Position (cm)",
 #      "shifts/positions", z_binned_average=True, z_bin_size=2)
-plot("densities", PlaceFields, x_label, "density/speeds", "Place field density (peaks/cm)", "density/densities",
-     alpha=0.5, x_binned_average=True, x_bin_size=2)
-# # plot("separations", PlaceFields, x_label, "separation/speeds", "Place field separation (cm)",
-# #      "separation/separations")
-#
-# plot("slopes", PhasePrecession, x_label, "speeds", "Inverse phase precession slope (cm/deg)", "slopes",
+# plot("densities", PlaceFields, x_label, "density/speeds", "Place field density (peaks/cm)", "density/densities",
+#      alpha=0.5, x_binned_average=True, x_bin_size=2)
+# plot("separations", PlaceFields, x_label, "separation/speeds", "Place field separation (cm)",
+#      "separation/separations")
+
+# plot("slopes", PhasePrecession, x_label, "speeds", "1 / phase precession slope (cm/deg)", "slopes",
 #      "Position (cm)", "positions", z_binned_average=True, z_bin_size=2)
-# plot_speed_ratios("slope_increments", PhasePrecession, "Fast / slow inverse phase precession", "slow_and_fast_slopes")
+plot_speed_ratios("slope_increments", PhasePrecession, "Fast / slow", "1 / Phase precession slope", "slow_and_fast_slopes")
 #
 # plot("sweep lengths", ThetaSweeps, x_label, "speeds", "Theta sweep length (cm)", "lengths", "Position (cm)", "positions",
 #      z_binned_average=True, z_bin_size=2, s=10, format='png')

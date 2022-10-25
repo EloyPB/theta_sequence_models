@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 
 
+CM = 1/2.54
+
 tick_size = 2
 # font_size = 6
 # line_width = 0.75

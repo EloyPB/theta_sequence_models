@@ -4,6 +4,8 @@ from scipy import odr
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 from PlaceFields import LinearTrack, Network, PlaceFields, SmartSim, Config
+from small_plots import *
+from batch_config import *
 
 
 class PhasePrecession(SmartSim):
@@ -219,16 +221,18 @@ class PhasePrecession(SmartSim):
 
 
 if __name__ == "__main__":
-    plt.rcParams.update({'font.size': 11})
+    # plt.rcParams.update({'font.size': 11})
 
     pp = PhasePrecession.current_instance(Config(variants={'LinearTrack': 'ManyLaps', 'Network': 'Log80'}, identifier=1,
-                                                 pickle_instances=True, save_figures=False, figure_format='pdf'))
+                                                 pickle_instances=True, save_figures=True,
+                                                 figures_root_path=figures_path, pickles_root_path=pickles_path,
+                                                 figure_format='pdf'))
     # for unit in [40, 60, 80, 100, 120]:
     #     pp.plot_cloud(unit)
-    pp.slopes_vs_mean_speed()
+    # pp.slopes_vs_mean_speed()
 
-    pp.plot_clouds((40, 60, 80, 100, 120))
+    pp.plot_clouds((40, 60, 80, 100, 120), fig_size=(7*CM, 9*CM))
 
-    pp.fast_and_slow_slopes(plot=True)
+    # pp.fast_and_slow_slopes(plot=True)
 
     plt.show()

@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter1d
 from Network import Network, LinearTrack
 from generic.smart_sim import Config, SmartSim
+from batch_config import *
+from small_plots import *
 
 
 class PlaceFields(SmartSim):
@@ -57,10 +59,11 @@ class PlaceFields(SmartSim):
         fig, ax = plt.subplots(figsize=fig_size)
         c_map = copy.copy(plt.cm.get_cmap('viridis'))
         c_map.set_bad(color='white')
-        mat = ax.matshow(self.activations, aspect='auto', cmap=c_map,
-                         extent=(0, self.num_bins*self.bin_size, self.last_unit-0.5, -0.5))
+        last_active_unit = np.argmax(np.nanmax(self.activations, axis=1) < 0.05)
+        mat = ax.matshow(self.activations[:last_active_unit], aspect='auto', cmap=c_map,
+                         extent=(0, self.num_bins*self.bin_size, last_active_unit-0.5, -0.5))
         ax.xaxis.set_ticks_position('bottom')
-        ax.set_ylabel("Unit #")
+        ax.set_ylabel("Place cell #")
         ax.set_xlabel("Position (cm)")
         bar = fig.colorbar(mat)
         bar.set_label("Activation")
@@ -309,22 +312,23 @@ class PlaceFields(SmartSim):
 
 
 if __name__ == "__main__":
-    plt.rcParams.update({'font.size': 11})
+    # plt.rcParams.update({'font.size': 11})
 
     variants = {
         # 'LinearTrack': 'Many',
         'Network': 'Log80'
     }
     pf = PlaceFields.current_instance(Config(identifier=1, variants=variants, pickle_instances=True,
-                                             save_figures=False, figure_format='pdf'))
-    # pf.plot_activations(fig_size=(4, 4))
-    pf.sizes_vs_mean_speed(colour_by_position=True, plot=True)
+                                             figures_root_path=figures_path, pickles_root_path=pickles_path,
+                                             save_figures=True, figure_format='pdf'))
+    pf.plot_activations(fig_size=(5*CM, 5*CM))
+    # pf.sizes_vs_mean_speed(colour_by_position=True, plot=True)
     # pf.density_vs_mean_speed()
 
     # pf.compute_true_fields()
     # pf.plot_true_field(unit=20)
     # pf.field_peak_shifts(plot=True)
 
-    pf.slow_and_fast_sizes(plot=True)
+    # pf.slow_and_fast_sizes(plot=True)
 
     plt.show()
