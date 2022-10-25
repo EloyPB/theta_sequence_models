@@ -4,6 +4,10 @@ from numpy.random import default_rng
 import matplotlib.pyplot as plt
 from generic.noise import smoothed_noise
 from generic.smart_sim import Config, SmartSim
+import small_plots
+
+
+CM = 1/2.54
 
 
 class LinearTrack(SmartSim):
@@ -79,20 +83,23 @@ class LinearTrack(SmartSim):
             features[:, feature_num] = feature
 
         # return features sorted by peak position
-        return features[:, np.argsort(np.argmax(features, axis=0))]
+        # return features[:, np.argsort(np.argmax(features, axis=0))]
+        return features
 
-    def plot_features(self, features_per_col=12, num_cols=3):
+    def plot_features(self, features_per_col=12, num_cols=3, fig_size=(5, 9)):
         features_per_plot = features_per_col * num_cols
         x = np.arange(self.ds/2, self.length, self.ds)
         for feature_num, feature in enumerate(self.features.T):
             figure_plot_num = feature_num % features_per_plot
             if figure_plot_num == 0:
-                fig, ax = plt.subplots(features_per_col, num_cols, sharex="all", sharey="all", figsize=(5, 9))
+                fig, ax = plt.subplots(features_per_col, num_cols, sharex="all", sharey="all", figsize=fig_size)
             row_num = int(figure_plot_num / num_cols)
             col_num = figure_plot_num % num_cols
             ax[row_num, col_num].plot(x, feature)
             ax[row_num, col_num].spines.right.set_visible(False)
             ax[row_num, col_num].spines.top.set_visible(False)
+            if row_num == features_per_col - 1:
+                ax[row_num, col_num].set_xlabel("Position (cm)")
 
     def plot_features_heatmap(self):
         fig, ax = plt.subplots()
@@ -165,7 +172,7 @@ if __name__ == "__main__":
     track = LinearTrack.current_instance(Config(identifier=2))
 
     print("plotting...")
-    # track.plot_features()
+    track.plot_features(fig_size=(7.5*CM, 15*CM))
     track.plot_trajectory()
     track.compute_mean_speeds(bin_size=2, plot=True)
     plt.show()

@@ -212,7 +212,10 @@ class Network(SmartSim):
         if pos_input:
             # foreground = colors.LinearSegmentedColormap.from_list('f', [(0, 0, 0, 0), (1, 1, 1, 1)], N=100)  # white
             # foreground = colors.LinearSegmentedColormap.from_list('f', [(0, 0, 0, 0), (1, 0, 1, 1)], N=100)  # magenta
-            foreground = colors.LinearSegmentedColormap.from_list('f', [(44/255, 160/255, 44/255, 0), (44/255, 160/255, 44/255, 1)], N=100)  # tab:green
+            # foreground = colors.LinearSegmentedColormap.from_list('f', [(44/255, 160/255, 44/255, 0), (44/255, 160/255, 44/255, 1)], N=100)  # tab:green
+            # foreground = colors.LinearSegmentedColormap.from_list('f', [(237/255, 125/255, 58/255, 0), (237/255, 125/255, 58/255, 1)], N=100)  # mango tango
+            foreground = colors.LinearSegmentedColormap.from_list('f', [(140/255, 216/255, 103/255, 0), (140/255, 216/255, 103/255, 1)], N=100)  # lime green
+
             matb = ax0.matshow(self.pos_input_log[index_start:index_end, first_unit:last_unit].T, aspect="auto", origin="lower",
                                extent=extent, cmap=foreground, vmin=0, vmax=1)
             # c_map = colors.LinearSegmentedColormap.from_list('f', [(0, 0, 0, 1), (1, 1, 1, 1)], N=100)
