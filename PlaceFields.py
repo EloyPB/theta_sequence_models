@@ -224,10 +224,10 @@ class PlaceFields(SmartSim):
         activations = self.pos_activations[unit]
 
         fig, ax = plt.subplots(figsize=fig_size, constrained_layout=True)
-        ax.axvline(self.bins_x[np.argmax(activations)], color='C1', linestyle='dashed')
-        ax.axvline(self.bins_x[np.argmax(self.activations[unit])], color='C0', linestyle='dashed')
-        ax.plot(self.bins_x, self.activations[unit], label='measured')
-        ax.plot(self.bins_x, activations, label='spatial input')
+        ax.axvline(self.bins_x[np.argmax(activations)], color='C2', linestyle='dashed')
+        ax.axvline(self.bins_x[np.argmax(self.activations[unit])], color='C3', linestyle='dashed')
+        ax.plot(self.bins_x, self.activations[unit], color='C3', label='measured')
+        ax.plot(self.bins_x, activations, color='C2', label='spatial input')
         ax.set_xlabel("Position (cm)")
         ax.set_ylabel("Activation")
         ax.spines.right.set_visible(False)
@@ -322,12 +322,12 @@ if __name__ == "__main__":
     pf = PlaceFields.current_instance(Config(identifier=1, variants=variants, pickle_instances=True,
                                              figures_root_path=figures_path, pickles_root_path=pickles_path,
                                              save_figures=True, figure_format='pdf'))
-    pf.plot_activations(fig_size=(5*CM, 5*CM))
+    # pf.plot_activations(fig_size=(5*CM, 5*CM))
     # pf.sizes_vs_mean_speed(colour_by_position=True, plot=True)
     # pf.density_vs_mean_speed()
 
     # pf.compute_true_fields()
-    # pf.plot_true_field(unit=20)
+    pf.plot_true_field(unit=67, fig_size=(6*CM, 3*CM))
     # pf.field_peak_shifts(plot=True)
 
     # pf.slow_and_fast_sizes(plot=True)

@@ -2,6 +2,7 @@ import numpy as np
 from scipy.stats import linregress
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+import matplotlib.patheffects as pe
 import seaborn as sns
 import pandas as pd
 from generic.smart_sim import Config, SmartSim
@@ -9,6 +10,8 @@ from LinearTrack import LinearTrack
 from Network import Network
 from PlaceFields import PlaceFields
 from Decoder import Decoder
+from small_plots import *
+from batch_config import *
 
 
 class ThetaSweeps(SmartSim):
@@ -77,8 +80,8 @@ class ThetaSweeps(SmartSim):
             self.real_pos_ends.append(np.mean(self.decoder.track.x_log[abs_end-right_offset-self.side_steps:abs_end-right_offset]))
             self.lengths.append((self.trajectory_ends[-1] - self.trajectory_starts[-1]) * self.fields.bin_size)
 
-    def plot(self, t_start=0, t_end=None, mark_edges=True):
-        fig, ax = self.decoder.plot(t_start, t_end)
+    def plot(self, t_start=0, t_end=None, mark_edges=True, fig_size=(6, 6)):
+        fig, ax = self.decoder.plot(t_start, t_end, fig_size=fig_size)
 
         first_index = max(self.network.first_logged_step, int(t_start / self.track.dt))
         if t_end is None:
@@ -100,11 +103,13 @@ class ThetaSweeps(SmartSim):
                     ax.plot(start_x, start_y, '*', color='C1')
                     ax.plot(end_x, end_y, '*', color='C3')
 
-                ax.plot((start_x, end_x), (start_y, end_y), color='k')
+                ax.plot((start_x, end_x), (start_y, end_y), color='white')
 
-        custom_lines = [Line2D([0], [0], color='white'),
-                        Line2D([0], [0], color='black')]
-        ax.legend(custom_lines, ['actual pos.', 'decoded pos.'], loc="upper left")
+        custom_lines = [Line2D([0], [0], color='lightskyblue',
+                               path_effects=[pe.Stroke(linewidth=2, foreground='k'), pe.Normal()]),
+                        Line2D([0], [0], color='white',
+                               path_effects=[pe.Stroke(linewidth=2, foreground='k'), pe.Normal()])]
+        ax.legend(custom_lines, ['real position', 'decoded sweep'], loc="upper left", handletextpad=0.6)
         self.maybe_save_fig(fig, "sweeps", dpi=500)
 
     def length_vs_mean_speed(self, plot=False):
@@ -192,16 +197,17 @@ class ThetaSweeps(SmartSim):
 
 
 if __name__ == "__main__":
-    plt.rcParams.update({'font.size': 11})
+    # plt.rcParams.update({'font.size': 11})
     variants = {'Network': 'Log80'}
 
     sweeps = ThetaSweeps.current_instance(Config(identifier=1, variants=variants, pickle_instances=True,
-                                                 save_figures=False, figure_format='png'))
-    sweeps.plot(t_start=150.62)
-    # sweeps.plot(t_start=151.256, t_end=151.632)
-    sweeps.length_vs_mean_speed(plot=True)
-
-    sweeps.ahead_and_behind_vs_mean_speed(plot=True)
-    sweeps.behind_length_vs_peak_shift(plot=True)
+                                                 figures_root_path=figures_path, pickles_root_path=pickles_path,
+                                                 save_figures=True, figure_format='png'))
+    sweeps.plot(t_start=150.62, mark_edges=False, fig_size=(11*CM, 8.9*CM))
+    # sweeps.plot(t_start=151.256, t_end=151.632, fig_size=(3.5*CM, 3.5*CM))
+    # sweeps.length_vs_mean_speed(plot=True)
+    #
+    # sweeps.ahead_and_behind_vs_mean_speed(plot=True)
+    # sweeps.behind_length_vs_peak_shift(plot=True)
 
     plt.show()

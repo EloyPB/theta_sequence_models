@@ -38,8 +38,8 @@ class Decoder(SmartSim):
                 denom_x = np.sqrt(np.sum(x ** 2) - n * mean_x ** 2)
                 self.correlations[t_step] = (x @ self.fields.activations - n * mean_x * mean_y) / (denom_x * denom_y)
 
-    def plot(self, t_start=0, t_end=None):
-        fig, ax = plt.subplots()
+    def plot(self, t_start=0, t_end=None, fig_size=(6, 6)):
+        fig, ax = plt.subplots(figsize=fig_size)
 
         first_index = max(self.network.first_logged_step, int(t_start / self.track.dt))
         if t_end is None:
@@ -52,7 +52,7 @@ class Decoder(SmartSim):
         t_end = last_index * self.track.dt
         extent = (t_start - self.track.dt/2, t_end - self.track.dt/2, 0, self.fields.num_bins * self.fields.bin_size)
 
-        c_map = copy.copy(plt.cm.get_cmap('viridis'))
+        c_map = copy.copy(plt.cm.get_cmap('binary'))
         c_map.set_bad(color='C7')
         mat = ax.matshow(self.correlations[first_index-self.network.first_logged_step:
                                            last_index-self.network.first_logged_step].T,
@@ -62,9 +62,11 @@ class Decoder(SmartSim):
         c_bar.set_label("P.V. Correlation")
 
         t = np.arange(first_index, last_index) * self.track.dt
-        ax.plot(t, self.track.x_log[first_index:last_index], color='white')
+        ax.plot(t, self.track.x_log[first_index:last_index], color='lightskyblue')
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Position (cm)")
+        ax.spines.right.set_visible(False)
+        ax.spines.top.set_visible(False)
         return fig, ax
 
 
