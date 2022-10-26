@@ -56,18 +56,19 @@ class PlaceFields(SmartSim):
             self.activations = gaussian_filter1d(self.activations, sigma=self.sigma, mode='nearest')
 
     def plot_activations(self, fig_size=(6.4, 4.8)):
-        fig, ax = plt.subplots(figsize=fig_size)
-        c_map = copy.copy(plt.cm.get_cmap('viridis'))
-        c_map.set_bad(color='white')
+        fig, ax = plt.subplots(figsize=fig_size, constrained_layout=True)
+        # c_map = copy.copy(plt.cm.get_cmap('viridis'))
+        # c_map.set_bad(color='white')
+        c_map = 'Blues'
         last_active_unit = np.argmax(np.nanmax(self.activations, axis=1) < 0.05)
         mat = ax.matshow(self.activations[:last_active_unit], aspect='auto', cmap=c_map,
                          extent=(0, self.num_bins*self.bin_size, last_active_unit-0.5, -0.5))
         ax.xaxis.set_ticks_position('bottom')
+        ax.set_xticks(np.arange(0, self.track.length, 50))
         ax.set_ylabel("Place cell #")
         ax.set_xlabel("Position (cm)")
         bar = fig.colorbar(mat)
         bar.set_label("Activation")
-        fig.tight_layout()
         self.maybe_save_fig(fig, "place fields")
 
     def compute_fields(self, activations):

@@ -195,7 +195,7 @@ class Network(SmartSim):
 
         ax0 = fig.add_subplot(spec[0:2, 0])
         mat = ax0.matshow(act_log.T, aspect="auto", origin="lower", extent=extent,
-                          cmap='binary',
+                          cmap='Blues',
                           # cmap='viridis',
                           vmin=v_min, vmax=v_max)
 
@@ -213,9 +213,9 @@ class Network(SmartSim):
         if pos_input:
             # foreground = colors.LinearSegmentedColormap.from_list('f', [(0, 0, 0, 0), (1, 1, 1, 1)], N=100)  # white
             # foreground = colors.LinearSegmentedColormap.from_list('f', [(0, 0, 0, 0), (1, 0, 1, 1)], N=100)  # magenta
-            # foreground = colors.LinearSegmentedColormap.from_list('f', [(44/255, 160/255, 44/255, 0), (44/255, 160/255, 44/255, 1)], N=100)  # tab:green
+            foreground = colors.LinearSegmentedColormap.from_list('f', [(44/255, 160/255, 44/255, 0), (44/255, 160/255, 44/255, 1)], N=100)  # tab:green
             # foreground = colors.LinearSegmentedColormap.from_list('f', [(148/255, 103/255, 189/255, 0), (148/255, 103/255, 189/255, 1)], N=100)  # tab:purple
-            foreground = colors.LinearSegmentedColormap.from_list('f', [(31/255, 119/255, 188/255, 0), (31/255, 119/255, 188/255, 1)], N=100)  # tab:blue
+            # foreground = colors.LinearSegmentedColormap.from_list('f', [(31/255, 119/255, 188/255, 0), (31/255, 119/255, 188/255, 1)], N=100)  # tab:blue
 
 
             matb = ax0.matshow(self.pos_input_log[index_start:index_end, first_unit:last_unit].T, aspect="auto", origin="lower",
@@ -239,7 +239,7 @@ class Network(SmartSim):
         if speed:
             ax2 = fig.add_subplot(spec[2 + theta, 0], sharex=ax0)
             time = np.arange(self.first_logged_step, self.first_logged_step + len(self.act_out_log)) * self.track.dt
-            ax2.plot(time, self.track.speed_log[self.first_logged_step:], color='C2')
+            ax2.plot(time, self.track.speed_log[self.first_logged_step:], color='C7')
             # max_v = max(max(self.track.speed_log) - 1, 1 - min(self.track.speed_log)) * 1.05
             # ax2.set_ylim(1 - max_v, 1 + max_v)
             ax2.set_ylabel("Speed (cm/s)")
@@ -356,7 +356,7 @@ class Network(SmartSim):
 if __name__ == "__main__":
 
     config = Config(identifier=2, variants={
-        'LinearTrack': 'OneLap',
+        # 'LinearTrack': 'OneLap',
         # 'LinearTrack': 'FixSpeed',
         'Network': 'LogAll'
         # 'Network': 'LogPosInput80'
@@ -370,15 +370,15 @@ if __name__ == "__main__":
     # network.plot_rec_weights()
     # network.plot_activities(apply_f=1)
 
-    # show facilitation and depression on a few runs at the beginning:
-    network.plot_dynamics(t_start=1.255, t_end=2.265, first_unit=28, last_unit=78, apply_f=1, fig_size=(12*CM, 10*CM))
+    # # show facilitation and depression on a few runs at the beginning:
+    # network.plot_dynamics(t_start=1.255, t_end=2.265, first_unit=28, last_unit=78, apply_f=1, fig_size=(12*CM, 10*CM))
 
     # # zoom in on one run at the beginning:
     # network.plot_activities(apply_f=1, pos_input=0, theta=0, speed=1, t_start=1.255, t_end=2.265,
     #                         first_unit=28, last_unit=78)
 
     # all runs, id=2
-    # network.plot_activities(apply_f=1, pos_input=1, theta=0, speed=1, last_unit=200, t_end=99.25, fig_size=(10*CM, 6.6*CM))
+    network.plot_activities(apply_f=1, pos_input=1, theta=0, speed=1, last_unit=200, t_end=99.25, fig_size=(10*CM, 6.6*CM))
     # network.plot_activities(apply_f=1, pos_input=1, theta=0, speed=0, first_unit=57, last_unit=92,
     #                         t_start=2.51, t_end=3.005, fig_size=(5.2*CM, 5*CM))
     # network.plot_activities(apply_f=1, pos_input=1, theta=0, speed=0, first_unit=57, last_unit=92,

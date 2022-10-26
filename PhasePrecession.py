@@ -98,10 +98,12 @@ class PhasePrecession(SmartSim):
         self.maybe_save_fig(fig, f"phase precession {unit}")
 
     def plot_clouds(self, units, fig_size=(4.8, 6)):
-        fig, ax = plt.subplots(len(units), 1, sharex='col', figsize=fig_size, constrained_layout=True)
+        fig = plt.figure(figsize=fig_size)
+        spec = fig.add_gridspec(len(units), 2, width_ratios=[1, 0.03])
 
-        c_map = copy.copy(plt.cm.get_cmap('viridis'))
-        c_map.set_bad(color='gray')
+        # c_map = copy.copy(plt.cm.get_cmap('viridis'))
+        # c_map.set_bad(color='gray')
+        c_map = 'Blues'
 
         for row, unit in enumerate(units):
             bounds = self.fields.field_bound_indices[unit]
@@ -109,25 +111,31 @@ class PhasePrecession(SmartSim):
             fit_x_rel = fit_x - self.fields.bins_x[bounds[0]]
             fit_y = self.intercepts[unit] + self.slopes[unit] * fit_x_rel
 
-            mat = ax[row].matshow(self.clouds[unit], aspect='auto', origin='lower', cmap=c_map,
-                                  extent=(0, self.num_spatial_bins * self.spatial_bin_size, 0, 360), vmin=0, vmax=1)
-            ax[row].plot(fit_x, fit_y, color='orange')
-            ax[row].xaxis.set_ticks_position('bottom')
-            if row == len(units) // 2:
-                ax[row].set_ylabel("Phase (deg)")
+            ax = fig.add_subplot(spec[row, 0])
+
+            mat = ax.matshow(self.clouds[unit], aspect='auto', origin='lower', cmap=c_map,
+                             extent=(0, self.num_spatial_bins * self.spatial_bin_size, 0, 360), vmin=0, vmax=1)
+            ax.plot(fit_x, fit_y, color='lightgray')
+            ax.xaxis.set_ticks_position('bottom')
+            # if row == len(units) // 2:
+            #     ax.set_ylabel("Phase (deg)")
+
+            ax.spines.right.set_visible(False)
+            ax.spines.top.set_visible(False)
+
+            if row == 0:
+                bar = fig.colorbar(mat, cax=fig.add_subplot(spec[0:2, 1]))
+                bar.set_label("Act.")
 
             if row < len(units) - 1:
-                ax[row].tick_params(labelbottom=False)
+                ax.tick_params(labelbottom=False)
             else:
-                bar = fig.colorbar(mat, ax=ax[row])
-                bar.set_label("Act.")
-                # bar.locator = ticker.MultipleLocator(0.5)
-                # bar.update_ticks()
+                ax.set_xlabel("Position (cm)")
 
-            ax[row].set_yticks([0, 180, 360])
-            ax[row].set_ylim((0, 360))
+            ax.set_yticks([0, 360])
+            ax.set_ylim((0, 360))
 
-        ax[-1].set_xlabel("Position (cm)")
+        fig.tight_layout(h_pad=0, w_pad=0)
         self.maybe_save_fig(fig, "clouds")
 
     def slopes_vs_mean_speed(self, plot=False, colour_by_position=True):
@@ -231,7 +239,7 @@ if __name__ == "__main__":
     #     pp.plot_cloud(unit)
     # pp.slopes_vs_mean_speed()
 
-    pp.plot_clouds((40, 60, 80, 100, 120), fig_size=(7*CM, 9*CM))
+    pp.plot_clouds((40, 60, 80, 100, 120), fig_size=(8*CM, 7*CM))
 
     # pp.fast_and_slow_slopes(plot=True)
 

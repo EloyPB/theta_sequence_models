@@ -5,6 +5,7 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
+from matplotlib import ticker
 import seaborn as sns
 from generic.smart_sim import SmartSim
 from batch_config import *
@@ -21,7 +22,8 @@ from small_plots import *
 
 def plot(name, class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path_y, z_label="", rel_path_z=None,
          z_binned_average=False, z_bin_size=1, z_bin_min_count=8, x_binned_average=False, x_bin_size=2,
-         x_bin_min_count=8, s=10, alpha=1., fig_size=(6*CM, 5*CM), format='pdf', z_min=0, z_max=200, extra_plotting=None):
+         x_bin_min_count=8, s=8, alpha=1., fig_size=(5*CM, 5*CM), format='pdf', z_min=0, z_max=200, extra_plotting=None,
+         multiple_locator=None):
 
     def load(rel_path):
         with open(f"{path}{rel_path}", 'rb') as f:
@@ -39,7 +41,7 @@ def plot(name, class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path
             all_z += list(load(rel_path_z))
 
     fig, ax = plt.subplots(figsize=fig_size, constrained_layout=True)
-    sc = ax.scatter(all_x, all_y, c=all_z if len(all_z) else None, s=s, alpha=alpha, edgecolors='none',
+    sc = ax.scatter(all_x, all_y, c=all_z if len(all_z) else 'C7', s=s, alpha=alpha, edgecolors='none',
                     vmin=z_min, vmax=z_max)
     if len(all_z):
         c_bar = fig.colorbar(sc)
@@ -101,6 +103,8 @@ def plot(name, class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path
     ax.set_ylabel(y_label)
     ax.spines.right.set_visible(False)
     ax.spines.top.set_visible(False)
+    if multiple_locator is not None:
+        ax.yaxis.set_major_locator(ticker.MultipleLocator(multiple_locator))
 
     if extra_plotting is not None:
         extra_plotting(ax)
@@ -108,7 +112,7 @@ def plot(name, class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path
     fig.savefig(f"{figures_path}/ALL/{name}.{format}", dpi=400)
 
 
-def plot_speed_ratios(name, class_def: Type[SmartSim], x_label, title, rel_path_y, bin_size=0.02, format='pdf',
+def plot_speed_ratios(name, class_def: Type[SmartSim], x_label, rel_path_y, bin_size=0.02, format='pdf',
                       fig_size=(4*CM, 3*CM)):
     all_ratios = []
     for identifier in range(NUM_RUNS):
@@ -133,12 +137,13 @@ def plot_speed_ratios(name, class_def: Type[SmartSim], x_label, title, rel_path_
     left_edge = 1 - num_bins * bin_size / 2
     right_edge = 1 + num_bins * bin_size / 2
 
-    ax.hist(all_ratios, bins=np.linspace(left_edge, right_edge, num_bins + 1))
+    ax.hist(all_ratios, bins=np.linspace(left_edge, right_edge, num_bins + 1), color='C7')
     ax.axvline(1, color='k', linewidth=0.75)
     ax.axvline(np.mean(all_ratios), linestyle='dotted', color='lightgray')
     ax.set_ylabel("Count")
     ax.set_xlabel(x_label)
-    ax.set_title(title)
+
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(0.2))
 
     ax.spines.right.set_visible(False)
     ax.spines.top.set_visible(False)
@@ -153,18 +158,19 @@ if not os.path.exists(path):
 x_label = "Mean speed (cm/s)"
 
 # plot("sizes", PlaceFields, x_label, "speeds", "Place field size (cm)", "sizes", "Position (cm)", "positions",
-#      z_binned_average=True, z_bin_size=2)
-plot_speed_ratios("size_increments", PlaceFields, "Fast / slow", "Place field size", "slow_and_fast_sizes", bin_size=0.05)
+#      z_binned_average=True, z_bin_size=2, fig_size=(4.94*CM, 5*CM))
+# plot_speed_ratios("size_increments", PlaceFields, "Fast / slow", "slow_and_fast_sizes",
+#                   bin_size=0.05, fig_size=(4*CM, 2.6*CM))
 # plot("shifts", PlaceFields, x_label, "shifts/speeds", "Place field peak shift (cm)", "shifts/shifts", "Position (cm)",
 #      "shifts/positions", z_binned_average=True, z_bin_size=2)
-# plot("densities", PlaceFields, x_label, "density/speeds", "Place field density (peaks/cm)", "density/densities",
-#      alpha=0.5, x_binned_average=True, x_bin_size=2)
+plot("densities", PlaceFields, x_label, "density/speeds", "Place field density (peaks/cm)", "density/densities",
+     alpha=0.5, x_binned_average=True, x_bin_size=2, fig_size=(3.75*CM, 4.9*CM))
 # plot("separations", PlaceFields, x_label, "separation/speeds", "Place field separation (cm)",
 #      "separation/separations")
 
-# plot("slopes", PhasePrecession, x_label, "speeds", "1 / phase precession slope (cm/deg)", "slopes",
-#      "Position (cm)", "positions", z_binned_average=True, z_bin_size=2)
-plot_speed_ratios("slope_increments", PhasePrecession, "Fast / slow", "1 / Phase precession slope", "slow_and_fast_slopes")
+plot("slopes", PhasePrecession, x_label, "speeds", "1 / phase precession slope (cm/deg)", "slopes",
+     "Position (cm)", "positions", z_binned_average=True, z_bin_size=2, fig_size=(5.25*CM, 5*CM), multiple_locator=0.05)
+# plot_speed_ratios("slope_increments", PhasePrecession, "Fast / slow", "slow_and_fast_slopes", fig_size=(4*CM, 2.6*CM))
 #
 # plot("sweep lengths", ThetaSweeps, x_label, "speeds", "Theta sweep length (cm)", "lengths", "Position (cm)", "positions",
 #      z_binned_average=True, z_bin_size=2, s=10, format='png')
