@@ -125,7 +125,7 @@ class PhasePrecession(SmartSim):
 
             if row == 0:
                 bar = fig.colorbar(mat, cax=fig.add_subplot(spec[0:2, 1]))
-                bar.set_label("Act.")
+                bar.set_label("Activation")
 
             if row < len(units) - 1:
                 ax.tick_params(labelbottom=False)
