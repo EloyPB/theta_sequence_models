@@ -8,6 +8,7 @@ from LinearTrack import LinearTrack
 from generic.smart_sim import Config, SmartSim
 from generic.timer import timer
 from small_plots import *
+from batch_config import *
 
 
 TWO_PI = 2 * np.pi
@@ -82,14 +83,17 @@ class Network(SmartSim):
 
         self.run(reset_indices, reset_value, learning_rate)
 
-    def plot_rec_weights(self):
-        fig, ax = plt.subplots(1, constrained_layout=True)
+    def plot_rec_weights(self, fig_size=(5, 5)):
+        fig, ax = plt.subplots(1, constrained_layout=True, figsize=fig_size)
         mat = ax.matshow(self.w_rec, aspect='auto', origin='lower')
+        ax.set_xlim((-0.5, self.num_units - 0.5))
+        ax.set_ylim((-0.5, self.num_units - 0.5))
         ax.xaxis.set_ticks_position('bottom')
         ax.set_title("Recurrent weights' matrix")
         ax.set_xlabel("Input unit number")
         ax.set_ylabel("Output unit number")
-        plt.colorbar(mat, ax=ax)
+        bar = plt.colorbar(mat, ax=ax, ticks=(self.w_rec.min(), 0.0, self.w_rec.max()))
+        self.maybe_save_fig(fig, "rec_weights")
 
     def run(self, reset_indices, reset_value=1, learning_rate=0, verbose=0):
         exp_concentration = np.exp(self.pos_factor_concentration)
@@ -356,18 +360,19 @@ class Network(SmartSim):
 if __name__ == "__main__":
 
     config = Config(identifier=2, variants={
-        # 'LinearTrack': 'OneLap',
+        'LinearTrack': 'OneLap',
         # 'LinearTrack': 'FixSpeed',
-        'Network': 'LogAll'
+        # 'Network': 'LogAll'
         # 'Network': 'LogPosInput80'
-    }, pickle_instances=True, save_figures=True, figure_format='png')
+    }, pickle_instances=True, save_figures=True, figures_root_path=figures_path, pickles_root_path=pickles_path,
+                    figure_format='pdf')
     network = Network.current_instance(config)
 
     # network.track.plot_trajectory()
     # network.track.plot_features()
     # network.track.plot_features_heatmap()
 
-    # network.plot_rec_weights()
+    network.plot_rec_weights(fig_size=(6.02*CM, 5*CM))
     # network.plot_activities(apply_f=1)
 
     # # show facilitation and depression on a few runs at the beginning:
@@ -378,7 +383,7 @@ if __name__ == "__main__":
     #                         first_unit=28, last_unit=78)
 
     # all runs, id=2
-    network.plot_activities(apply_f=1, pos_input=1, theta=0, speed=1, last_unit=200, t_end=99.25, fig_size=(10*CM, 6.6*CM))
+    # network.plot_activities(apply_f=1, pos_input=1, theta=0, speed=1, last_unit=200, t_end=99.25, fig_size=(10*CM, 6.6*CM))
     # network.plot_activities(apply_f=1, pos_input=1, theta=0, speed=0, first_unit=57, last_unit=92,
     #                         t_start=2.51, t_end=3.005, fig_size=(5.2*CM, 5*CM))
     # network.plot_activities(apply_f=1, pos_input=1, theta=0, speed=0, first_unit=57, last_unit=92,

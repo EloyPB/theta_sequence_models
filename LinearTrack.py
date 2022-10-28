@@ -41,6 +41,7 @@ class LinearTrack(SmartSim):
         self.lap_start_steps = []
 
         self.mean_speeds = None
+        self.median_speeds = None
 
         # calculate mean lap duration
         x = 0
@@ -167,6 +168,28 @@ class LinearTrack(SmartSim):
             ax.set_xlabel("Position (cm)")
             ax.legend()
 
+    def compute_summary_speeds(self, bin_size, plot=False):
+        num_bins = int(self.length / bin_size)
+        bin_speeds = [[] for _ in range(num_bins)]
+
+        for x, speed in zip(self.x_log, self.speed_log):
+            bin_num = int(x / bin_size)
+            bin_speeds[bin_num].append(speed)
+
+        self.mean_speeds = np.array([np.mean(speeds) for speeds in bin_speeds])
+        self.median_speeds = np.array([np.median(speeds) for speeds in bin_speeds])
+
+        if plot:
+            fig, ax = plt.subplots()
+            x_sp = np.arange(self.ds / 2, self.length, self.ds)
+            ax.plot(x_sp, self.speed_profile, label="profile", color='gray')
+            x = np.arange(bin_size / 2, self.length, bin_size)
+            ax.plot(x, self.mean_speeds, label="mean")
+            ax.plot(x, self.median_speeds, label="median")
+            ax.set_ylabel("Mean speed (cm/s)")
+            ax.set_xlabel("Position (cm)")
+            ax.legend()
+
 
 if __name__ == "__main__":
     track = LinearTrack.current_instance(Config(identifier=2))
@@ -174,5 +197,6 @@ if __name__ == "__main__":
     print("plotting...")
     track.plot_features(fig_size=(7.5*CM, 15*CM))
     track.plot_trajectory()
-    track.compute_mean_speeds(bin_size=2, plot=True)
+    # track.compute_mean_speeds(bin_size=2, plot=True)
+    track.compute_summary_speeds(bin_size=2, plot=True)
     plt.show()
