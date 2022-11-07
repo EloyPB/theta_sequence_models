@@ -59,9 +59,10 @@ def init():
 def update(t):
     global rat_pos
     neural_pos = neural_speed * t
-    d = abs(rat_pos - length/2) / (length/2)
-    speed = d * edge_speed + (1 - d) * center_speed
-    rat_pos += speed * dt
+    if rat_pos < length - radius:
+        d = abs(rat_pos - length / 2) / (length / 2)
+        speed = d * edge_speed + (1 - d) * center_speed
+        rat_pos += speed * dt
 
     for circle_num, circle in enumerate(circles):
         act = np.exp(-(neural_pos - circle_num)**2 / (2 * circles_sigma**2))
@@ -80,11 +81,12 @@ def update(t):
     return circles + [im] + arrows
 
 
-ani = FuncAnimation(fig, update, frames=np.arange(0, time + dt, dt), init_func=init, interval=30, blit=False,
+t_steps = np.concatenate((np.arange(0, time + dt, dt), np.full(int(0.3/dt), time)))
+ani = FuncAnimation(fig, update, frames=t_steps, init_func=init, interval=30, blit=False,
                     repeat=False)
-ani.save("figures/animation.gif", dpi=400)
+# ani.save("figures/animation.mp4", dpi=400)
 fig.savefig("figures/result1.pdf")
-# plt.show()
+plt.show()
 
 
 # plot each neuron at the position it gets associated with
