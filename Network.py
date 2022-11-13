@@ -257,6 +257,8 @@ class Network(SmartSim):
         self.maybe_save_fig(fig, "activities", dpi=500)
 
     def plot_dynamics(self, t_start=0, t_end=None, first_unit=0, last_unit=None, apply_f=False, fig_size=(6, 5)):
+        """Plots the short-term synaptic facilitation/depression values on top of the activation values.
+        """
         index_start = max(int(t_start / self.track.dt) - self.first_logged_step, 0)
         index_end = int(t_end / self.track.dt) - self.first_logged_step if t_end is not None else len(self.act_out_log)
 
@@ -341,6 +343,80 @@ class Network(SmartSim):
 
         self.maybe_save_fig(fig, "dynamics", dpi=500)
 
+    def plot_dynamics_and_act_profile(self, t_start=0, t_end=None, first_unit=0, last_unit=None, fig_size=(6, 5)):
+        """Plots the short-term synaptic facilitation/depression values and a profile of the theta sweeps.
+        """
+        index_start = max(int(t_start / self.track.dt) - self.first_logged_step, 0)
+        index_end = int(t_end / self.track.dt) - self.first_logged_step if t_end is not None else len(self.act_out_log)
+
+        if last_unit is None:
+            last_unit = self.num_units
+
+        # calculate the profiles of the theta sweeps
+        act_log = np.array(self.act_out_log[index_start:index_end, first_unit:last_unit])
+        time = np.arange(index_start + self.first_logged_step, index_end + self.first_logged_step) * self.track.dt
+        top_profiles = []
+        bottom_profiles = []
+        for i, activities in enumerate(act_log):
+            if (activities > 0.5).any():
+                bottom_profiles.append(np.argmax(activities > 0.5))
+                top_profiles.append(bottom_profiles[-1] + np.argmax(activities[bottom_profiles[-1]:] < 0.5))
+            else:
+                top_profiles.append(np.nan)
+                bottom_profiles.append(np.nan)
+
+        in_sweep_before = False
+        for i in range(len(time)):
+            in_sweep_now = ~np.isnan(top_profiles[i]) | ~np.isnan(bottom_profiles[i])
+            if (in_sweep_now and not in_sweep_before) or (not in_sweep_now and in_sweep_before):
+                time = np.insert(time, i, time[i - in_sweep_before])
+                bottom_profiles.insert(i, top_profiles[i - in_sweep_before])
+                top_profiles.insert(i, bottom_profiles[i - in_sweep_before])
+                in_sweep_before = not in_sweep_before
+        bottom_profiles = np.array(bottom_profiles) + first_unit
+        top_profiles = np.array(top_profiles) + first_unit
+
+        extent = ((index_start + self.first_logged_step) * self.track.dt - self.track.dt / 2,
+                  (index_end + self.first_logged_step) * self.track.dt - self.track.dt / 2,
+                  first_unit - 0.5, last_unit - 0.5)
+
+        fig, ax = plt.subplots(3, sharex='col', figsize=fig_size)
+        mat0 = ax[0].matshow(self.depression_log[index_start:index_end, first_unit:last_unit].T, aspect="auto",
+                             origin="lower", extent=extent, cmap='viridis')
+        ax[0].plot(time, np.array(top_profiles), 'k', linewidth=0.5)
+        ax[0].plot(time, np.array(bottom_profiles), 'k', linewidth=0.5)
+        bar0 = plt.colorbar(mat0, ax=ax[0])
+        bar0.set_label("D")
+
+        mat1 = ax[1].matshow(self.facilitation_log[index_start:index_end, first_unit:last_unit].T, aspect="auto",
+                             origin="lower", extent=extent, cmap='viridis')
+        ax[1].plot(time, np.array(top_profiles), 'k', linewidth=0.5)
+        ax[1].plot(time, np.array(bottom_profiles), 'k', linewidth=0.5)
+        bar1 = plt.colorbar(mat1, ax=ax[1])
+        bar1.set_label("F")
+
+        mat2 = ax[2].matshow(((1-self.depression_log[index_start:index_end, first_unit:last_unit])
+                             * self.facilitation_log[index_start:index_end, first_unit:last_unit]).T,
+                             aspect="auto", origin="lower", extent=extent, cmap='viridis')
+        ax[2].plot(time, np.array(top_profiles), 'k', linewidth=0.5)
+        ax[2].plot(time, np.array(bottom_profiles), 'k', linewidth=0.5)
+        bar2 = plt.colorbar(mat2, ax=ax[2])
+        bar2.set_label("(1-D) F")
+
+        ax[0].set_ylabel("Place cell #")
+        ax[0].xaxis.set_ticks_position('bottom')
+        ax[0].tick_params(labelbottom=False)
+        ax[1].set_ylabel("Place cell #")
+        ax[1].xaxis.set_ticks_position('bottom')
+        ax[1].tick_params(labelbottom=False)
+        ax[2].set_ylabel("Place cell #")
+        ax[2].set_xlabel("Time (s)")
+        ax[2].xaxis.set_ticks_position('bottom')
+
+        fig.tight_layout()
+
+        self.maybe_save_fig(fig, "dynamics", dpi=500)
+
     def plot_theta_and_pos_factor(self, cycles=2, num_points=1000, fig_size=(4.8, 2.5)):
         time = np.linspace(0, cycles/8, num_points)
         theta = 2 * np.pi * 8 * time
@@ -362,7 +438,7 @@ if __name__ == "__main__":
     config = Config(identifier=2, variants={
         'LinearTrack': 'OneLap',
         # 'LinearTrack': 'FixSpeed',
-        # 'Network': 'LogAll'
+        'Network': 'LogAll'
         # 'Network': 'LogPosInput80'
     }, pickle_instances=True, save_figures=True, figures_root_path=figures_path, pickles_root_path=pickles_path,
                     figure_format='pdf')
@@ -372,11 +448,13 @@ if __name__ == "__main__":
     # network.track.plot_features()
     # network.track.plot_features_heatmap()
 
-    network.plot_rec_weights(fig_size=(6.02*CM, 5*CM))
+    # network.plot_rec_weights(fig_size=(6.02*CM, 5*CM))
     # network.plot_activities(apply_f=1)
 
-    # # show facilitation and depression on a few runs at the beginning:
+    # show facilitation and depression in a few cycles at the beginning:
     # network.plot_dynamics(t_start=1.255, t_end=2.265, first_unit=28, last_unit=78, apply_f=1, fig_size=(12*CM, 10*CM))
+    network.plot_dynamics_and_act_profile(t_start=1.255, t_end=2.265, first_unit=28, last_unit=78,
+                                          fig_size=(12 * CM, 10 * CM))
 
     # # zoom in on one run at the beginning:
     # network.plot_activities(apply_f=1, pos_input=0, theta=0, speed=1, t_start=1.255, t_end=2.265,
