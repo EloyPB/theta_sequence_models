@@ -126,6 +126,8 @@ class PhasePrecession(SmartSim):
             if row == 0:
                 bar = fig.colorbar(mat, cax=fig.add_subplot(spec[0:2, 1]))
                 bar.set_label("Activation")
+                bar.locator = ticker.MultipleLocator(0.5)
+                bar.update_ticks()
 
             if row < len(units) - 1:
                 ax.tick_params(labelbottom=False)
@@ -239,7 +241,7 @@ if __name__ == "__main__":
     #     pp.plot_cloud(unit)
     # pp.slopes_vs_mean_speed()
 
-    pp.plot_clouds((40, 60, 80, 100, 120), fig_size=(8*CM, 7*CM))
+    pp.plot_clouds((40, 60, 80, 100, 120), fig_size=(7.5*CM, 7*CM))
 
     # pp.fast_and_slow_slopes(plot=True)
 

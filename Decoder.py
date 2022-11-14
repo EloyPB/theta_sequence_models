@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from generic.smart_sim import Config, SmartSim
 from PlaceFields import PlaceFields
+from small_plots import *
+from batch_config import *
 
 
 class Decoder(SmartSim):
@@ -52,7 +54,7 @@ class Decoder(SmartSim):
         t_end = last_index * self.track.dt
         extent = (t_start - self.track.dt/2, t_end - self.track.dt/2, 0, self.fields.num_bins * self.fields.bin_size)
 
-        c_map = copy.copy(plt.cm.get_cmap('binary'))
+        c_map = copy.copy(plt.cm.get_cmap('rainbow'))
         c_map.set_bad(color='C7')
         mat = ax.matshow(self.correlations[first_index-self.network.first_logged_step:
                                            last_index-self.network.first_logged_step].T,
@@ -62,16 +64,22 @@ class Decoder(SmartSim):
         c_bar.set_label("P.V. Correlation")
 
         t = np.arange(first_index, last_index) * self.track.dt
-        ax.plot(t, self.track.x_log[first_index:last_index], color='lightskyblue')
+        ax.plot(t, self.track.x_log[first_index:last_index], color='k', label='real position')
+        ax.legend(loc="upper left")
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Position (cm)")
         ax.spines.right.set_visible(False)
         ax.spines.top.set_visible(False)
+        self.maybe_save_fig(fig, "decoding", dpi=600)
         return fig, ax
 
 
 if __name__ == "__main__":
-    decoder = Decoder.current_instance(Config(identifier=1, variants={'Network': 'Log80'}, pickle_instances=True))
+    decoder = Decoder.current_instance(Config(identifier=1, variants=variants, pickle_instances=True,
+                                              figures_root_path=figures_path, pickles_root_path=pickles_path,
+                                              save_figures=True, figure_format='png'))
     # decoder.network.plot_activities(apply_f=True)
-    decoder.plot()
+    # decoder.plot()
+    decoder.plot(t_start=150.62, fig_size=(11*CM, 8.9*CM))
+    # decoder.plot(t_start=151.256, t_end=151.632, fig_size=(3.5*CM, 3.5*CM))  # zoom in
     plt.show()
