@@ -109,7 +109,7 @@ def plot(name, class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path
     if extra_plotting is not None:
         extra_plotting(ax)
 
-    fig.savefig(f"{figures_path}/ALL/{name}.{format}", dpi=400)
+    fig.savefig(f"{figures_path}/ALL/{name}.{format}", dpi=500)
 
 
 def plot_speed_ratios(name, class_def: Type[SmartSim], x_label, rel_path_y, bin_size=0.02, format='pdf',
@@ -159,10 +159,10 @@ x_label = "Mean speed (cm/s)"
 
 # plot("sizes", PlaceFields, x_label, "speeds", "Place field size (cm)", "sizes", "Position (cm)", "positions",
 #      z_binned_average=True, z_bin_size=2, fig_size=(4.94*CM, 5*CM))
-plot_speed_ratios("size_increments", PlaceFields, "Fast / slow", "slow_and_fast_sizes",
-                  bin_size=0.05, fig_size=(4*CM, 2.6*CM))
-# plot("shifts", PlaceFields, x_label, "shifts/speeds", "Place field peak shift (cm)", "shifts/shifts", "Position (cm)",
-#      "shifts/positions", z_binned_average=True, z_bin_size=2, fig_size=(6*CM, 5*CM))
+# plot_speed_ratios("size_increments", PlaceFields, "Fast / slow", "slow_and_fast_sizes",
+#                   bin_size=0.05, fig_size=(4*CM, 2.6*CM))
+plot("shifts", PlaceFields, x_label, "shifts/speeds", "Place field shift (cm)", "shifts/shifts", "Position (cm)",
+     "shifts/positions", z_binned_average=True, z_bin_size=2, fig_size=(6*CM, 5*CM))
 # plot("densities", PlaceFields, x_label, "density/speeds", "Place field density (peaks/cm)", "density/densities",
 #      alpha=0.5, x_binned_average=True, x_bin_size=2, fig_size=(3.75*CM, 4.9*CM))
 # plot("separations", PlaceFields, x_label, "separation/speeds", "Place field separation (cm)",
@@ -170,19 +170,19 @@ plot_speed_ratios("size_increments", PlaceFields, "Fast / slow", "slow_and_fast_
 
 # plot("slopes", PhasePrecession, x_label, "speeds", "1 / phase precession slope (cm/deg)", "slopes",
 #      "Position (cm)", "positions", z_binned_average=True, z_bin_size=2, fig_size=(5.25*CM, 5*CM), multiple_locator=0.05)
-plot_speed_ratios("slope_increments", PhasePrecession, "Fast / slow", "slow_and_fast_slopes", fig_size=(4*CM, 2.6*CM))
+# plot_speed_ratios("slope_increments", PhasePrecession, "Fast / slow", "slow_and_fast_slopes", fig_size=(4*CM, 2.6*CM))
 #
-# plot("sweep lengths", ThetaSweeps, x_label, "speeds", "Theta sweep length (cm)", "lengths", "Position (cm)", "positions",
-#      z_binned_average=True, z_bin_size=2, s=5, format='png', fig_size=(6*CM, 5*CM))
-# plot("ahead lengths", ThetaSweeps, x_label, "ahead_and_behind/ahead_speeds", "Ahead length (cm)",
-#      "ahead_and_behind/ahead_lengths", "Position (cm)", "ahead_and_behind/ahead_real_pos",
-#      z_binned_average=True, z_bin_size=2, s=5, format='png', fig_size=(6*CM, 5*CM))
-# plot("behind lengths", ThetaSweeps, x_label, "ahead_and_behind/behind_speeds", "Behind length (cm)",
-#      "ahead_and_behind/behind_lengths", "Position (cm)", "ahead_and_behind/behind_real_pos",
-#      z_binned_average=True, z_bin_size=2, s=5, format='png', fig_size=(6*CM, 5*CM))
-# plot("matched shifts", ThetaSweeps, "Place field shift (cm)", "ahead_and_behind/shifts",
-#      "Behind length (cm)", "ahead_and_behind/behind_lengths", "Position (cm)",
-#      "ahead_and_behind/behind_real_pos", z_binned_average=True, z_bin_size=2, s=5, format='png',
-#      extra_plotting=lambda ax: ax.plot((0, 20), (0, 20), linestyle='dashed', color='black'), fig_size=(6*CM, 5*CM))
+plot("sweep lengths", ThetaSweeps, x_label, "speeds", "Theta sweep length (cm)", "lengths", "Position (cm)", "positions",
+     z_binned_average=True, z_bin_size=2, s=5, format='png', fig_size=(6*CM, 5*CM))
+plot("ahead lengths", ThetaSweeps, x_label, "ahead_and_behind/ahead_speeds", "Look-ahead distance (cm)",
+     "ahead_and_behind/ahead_lengths", "Position (cm)", "ahead_and_behind/ahead_real_pos",
+     z_binned_average=True, z_bin_size=2, s=5, format='png', fig_size=(6*CM, 5*CM))
+plot("behind lengths", ThetaSweeps, x_label, "ahead_and_behind/behind_speeds", "Look-behind distance (cm)",
+     "ahead_and_behind/behind_lengths", "Position (cm)", "ahead_and_behind/behind_real_pos",
+     z_binned_average=True, z_bin_size=2, s=5, format='png', fig_size=(6*CM, 5*CM))
+plot("matched shifts", ThetaSweeps, "Place field shift (cm)", "ahead_and_behind/shifts",
+     "Look-behind distance (cm)", "ahead_and_behind/behind_lengths", "Position (cm)",
+     "ahead_and_behind/behind_real_pos", z_binned_average=True, z_bin_size=2, s=5, format='png',
+     extra_plotting=lambda ax: ax.plot((0, 20), (0, 20), linestyle='dashed', color='black'), fig_size=(6*CM, 5*CM))
 
 plt.show()
