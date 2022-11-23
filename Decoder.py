@@ -77,9 +77,9 @@ class Decoder(SmartSim):
 if __name__ == "__main__":
     decoder = Decoder.current_instance(Config(identifier=1, variants=variants, pickle_instances=True,
                                               figures_root_path=figures_path, pickles_root_path=pickles_path,
-                                              save_figures=True, figure_format='png'))
+                                              save_figures=False, figure_format='pdf'))
     # decoder.network.plot_activities(apply_f=True)
     # decoder.plot()
-    decoder.plot(t_start=150.62, fig_size=(11*CM, 8.9*CM))
-    # decoder.plot(t_start=151.256, t_end=151.632, fig_size=(3.5*CM, 3.5*CM))  # zoom in
+    # decoder.plot(t_start=150.62, fig_size=(14*CM, 8*CM))
+    decoder.plot(t_start=151.256, t_end=151.632, fig_size=(3.5*CM, 3.5*CM))  # zoom in
     plt.show()

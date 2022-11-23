@@ -96,7 +96,7 @@ class LinearTrack(SmartSim):
                 fig, ax = plt.subplots(features_per_col, num_cols, sharex="all", sharey="all", figsize=fig_size)
             row_num = int(figure_plot_num / num_cols)
             col_num = figure_plot_num % num_cols
-            ax[row_num, col_num].plot(x, feature)
+            ax[row_num, col_num].plot(x, feature, color='C2')
             ax[row_num, col_num].spines.right.set_visible(False)
             ax[row_num, col_num].spines.top.set_visible(False)
             if row_num == features_per_col - 1:
@@ -195,8 +195,8 @@ if __name__ == "__main__":
     track = LinearTrack.current_instance(Config(identifier=2))
 
     print("plotting...")
-    track.plot_features(fig_size=(7.5*CM, 15*CM))
-    track.plot_trajectory()
+    track.plot_features(fig_size=(7*CM, 12*CM))
+    # track.plot_trajectory()
     # track.compute_mean_speeds(bin_size=2, plot=True)
-    track.compute_summary_speeds(bin_size=2, plot=True)
+    # track.compute_summary_speeds(bin_size=2, plot=True)
     plt.show()

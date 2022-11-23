@@ -2,11 +2,12 @@ import sys
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib import colors
 import matplotlib.ticker as ticker
+from matplotlib.ticker import FormatStrFormatter
 from LinearTrack import LinearTrack
 from generic.smart_sim import Config, SmartSim
-from generic.timer import timer
 from small_plots import *
 from batch_config import *
 
@@ -83,16 +84,35 @@ class Network(SmartSim):
 
         self.run(reset_indices, reset_value, learning_rate)
 
-    def plot_rec_weights(self, fig_size=(5, 5)):
+    def plot_rec_weights(self, fig_size=(5, 5), inset_up_to=None):
         fig, ax = plt.subplots(1, constrained_layout=True, figsize=fig_size)
-        mat = ax.matshow(self.w_rec, aspect='auto', origin='lower')
+        mat = ax.matshow(self.w_rec, aspect='auto', origin='lower', cmap='binary')
+        ax.plot((0, self.num_units), (0, self.num_units), linestyle='dashed', color='w')
         ax.set_xlim((-0.5, self.num_units - 0.5))
         ax.set_ylim((-0.5, self.num_units - 0.5))
         ax.xaxis.set_ticks_position('bottom')
-        ax.set_title("Recurrent weights' matrix")
-        ax.set_xlabel("Input unit number")
-        ax.set_ylabel("Output unit number")
-        bar = plt.colorbar(mat, ax=ax, ticks=(self.w_rec.min(), 0.0, self.w_rec.max()))
+        ax.set_title(r"$W_{rec}$")
+        ax.set_xlabel("Input place cell #")
+        ax.set_ylabel("Output place cell #")
+        ax.spines.right.set_visible(False)
+        ax.spines.top.set_visible(False)
+        plt.colorbar(mat, ax=ax, ticks=(self.w_rec.min(), 0.0, self.w_rec.max()), format=FormatStrFormatter('%.1f'))
+
+        if inset_up_to is not None:
+            axins = inset_axes(ax, width="35%", height="35%", loc='lower left', bbox_to_anchor=(0.615, 0.12, 1.1, 1.1),
+                               borderpad=0, bbox_transform=ax.transAxes)
+            axins.matshow(self.w_rec[:inset_up_to, :inset_up_to], aspect='auto', origin='lower', cmap='binary')
+            axins.plot((0, inset_up_to), (0, inset_up_to), linestyle='dashed', color='w')
+            axins.set_xlim((-0.5, inset_up_to - 0.5))
+            axins.set_ylim((-0.5, inset_up_to - 0.5))
+            axins.set_xticks((0, inset_up_to/2))
+            axins.set_yticks((0, inset_up_to/2))
+            axins.xaxis.set_ticks_position('bottom')
+            axins.tick_params(axis='x', labelsize=5)
+            axins.tick_params(axis='y', labelsize=5)
+            axins.spines.right.set_visible(False)
+            axins.spines.top.set_visible(False)
+
         self.maybe_save_fig(fig, "rec_weights")
 
     def run(self, reset_indices, reset_value=1, learning_rate=0, verbose=0):
@@ -382,14 +402,14 @@ class Network(SmartSim):
 
         fig, ax = plt.subplots(3, sharex='col', figsize=fig_size)
         mat0 = ax[0].matshow(self.depression_log[index_start:index_end, first_unit:last_unit].T, aspect="auto",
-                             origin="lower", extent=extent, cmap='viridis')
+                             origin="lower", extent=extent, cmap='cividis')
         ax[0].plot(time, np.array(top_profiles), 'k', linewidth=0.5)
         ax[0].plot(time, np.array(bottom_profiles), 'k', linewidth=0.5)
         bar0 = plt.colorbar(mat0, ax=ax[0])
         bar0.set_label("D")
 
         mat1 = ax[1].matshow(self.facilitation_log[index_start:index_end, first_unit:last_unit].T, aspect="auto",
-                             origin="lower", extent=extent, cmap='viridis')
+                             origin="lower", extent=extent, cmap='cividis')
         ax[1].plot(time, np.array(top_profiles), 'k', linewidth=0.5)
         ax[1].plot(time, np.array(bottom_profiles), 'k', linewidth=0.5)
         bar1 = plt.colorbar(mat1, ax=ax[1])
@@ -397,7 +417,7 @@ class Network(SmartSim):
 
         mat2 = ax[2].matshow(((1-self.depression_log[index_start:index_end, first_unit:last_unit])
                              * self.facilitation_log[index_start:index_end, first_unit:last_unit]).T,
-                             aspect="auto", origin="lower", extent=extent, cmap='viridis')
+                             aspect="auto", origin="lower", extent=extent, cmap='cividis')
         ax[2].plot(time, np.array(top_profiles), 'k', linewidth=0.5)
         ax[2].plot(time, np.array(bottom_profiles), 'k', linewidth=0.5)
         bar2 = plt.colorbar(mat2, ax=ax[2])
@@ -426,10 +446,12 @@ class Network(SmartSim):
         fig, ax = plt.subplots(figsize=fig_size, constrained_layout=True)
         for cycle in range(cycles + 1):
             ax.axvline(cycle / 8, color='gray', linestyle='dashed')
-        ax.plot(time, theta_inh, label=r"$i_{\theta}$")
-        ax.plot(time, pos_factor, color='k', label=r"$\beta_{\theta}$")
+        ax.plot(time, theta_inh, color='k', label=r"$i_{\theta}$")
+        ax.plot(time, pos_factor, color='C2', label=r"$\beta_{\theta}$")
         ax.set_xlabel("Time (s)")
         ax.legend(ncol=2)
+        ax.spines.right.set_visible(False)
+        ax.spines.top.set_visible(False)
         self.maybe_save_fig(fig, "components")
 
 
@@ -448,13 +470,13 @@ if __name__ == "__main__":
     # network.track.plot_features()
     # network.track.plot_features_heatmap()
 
-    # network.plot_rec_weights(fig_size=(6.02*CM, 5*CM))
+    network.plot_rec_weights(fig_size=(5.5*CM, 4.42*CM), inset_up_to=30)
     # network.plot_activities(apply_f=1)
 
     # show facilitation and depression in a few cycles at the beginning:
     # network.plot_dynamics(t_start=1.255, t_end=2.265, first_unit=28, last_unit=78, apply_f=1, fig_size=(12*CM, 10*CM))
-    network.plot_dynamics_and_act_profile(t_start=1.255, t_end=2.265, first_unit=28, last_unit=78,
-                                          fig_size=(12 * CM, 10 * CM))
+    # network.plot_dynamics_and_act_profile(t_start=1.255, t_end=2.265, first_unit=28, last_unit=78,
+    #                                       fig_size=(8.5 * CM, 11.35 * CM))
 
     # # zoom in on one run at the beginning:
     # network.plot_activities(apply_f=1, pos_input=0, theta=0, speed=1, t_start=1.255, t_end=2.265,

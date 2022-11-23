@@ -220,19 +220,20 @@ class PlaceFields(SmartSim):
         if self.sigma > 0:
             self.pos_activations = gaussian_filter1d(self.pos_activations, sigma=self.sigma, mode='nearest')
 
-    def plot_true_field(self, unit, fig_size=(6.4, 4.8)):
+    def plot_true_field(self, unit, start=0, fig_size=(6.4, 4.8)):
         activations = self.pos_activations[unit]
+        first_bin = int(start/self.bin_size)
 
         fig, ax = plt.subplots(figsize=fig_size, constrained_layout=True)
         ax.axvline(self.bins_x[np.argmax(activations)], color='C2', linestyle='dashed')
         ax.axvline(self.bins_x[np.argmax(self.activations[unit])], color='C3', linestyle='dashed')
-        ax.plot(self.bins_x, self.activations[unit], color='C3', label='measured')
-        ax.plot(self.bins_x, activations, color='C2', label='spatial input')
+        ax.plot(self.bins_x[first_bin:], self.activations[unit, first_bin:], color='C3', label='measured')
+        ax.plot(self.bins_x[first_bin:], activations[first_bin:], color='C2', label='spatial input')
         ax.set_xlabel("Position (cm)")
         ax.set_ylabel("Activation")
         ax.spines.right.set_visible(False)
         ax.spines.top.set_visible(False)
-        ax.legend(loc='upper right')
+        ax.legend(loc='upper right', fontsize='small')
         self.maybe_save_fig(fig, "true_field")
 
     def field_peak_shifts(self, plot=False):
@@ -320,15 +321,15 @@ if __name__ == "__main__":
     }
     pf = PlaceFields.current_instance(Config(identifier=1, variants=variants, pickle_instances=True,
                                              figures_root_path=figures_path, pickles_root_path=pickles_path,
-                                             save_figures=False, figure_format='pdf'))
+                                             save_figures=True, figure_format='pdf'))
     # pf.plot_activations(fig_size=(5*CM, 5*CM))
     # pf.sizes_vs_mean_speed(colour_by_position=True, plot=True)
     # pf.density_vs_mean_speed()
 
     # pf.compute_true_fields()
-    # pf.plot_true_field(unit=67, fig_size=(6*CM, 3*CM))
+    pf.plot_true_field(unit=67, start=25, fig_size=(4.25*CM, 3*CM))
     # pf.field_peak_shifts(plot=True)
 
-    pf.slow_and_fast_sizes(plot=True)
+    # pf.slow_and_fast_sizes(plot=True)
 
     plt.show()
