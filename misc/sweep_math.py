@@ -19,6 +19,7 @@ time = np.arange(0, t_sim, dt)
 
 x = [0]
 v_bar_x = []
+r0 = [0]
 r1 = [0]
 r2 = [0]
 
@@ -28,6 +29,10 @@ for t in time:
     if t < T:
         v_x = v_bar_x[-1] * v_factor
         x.append(x[-1] + v_x * dt)
+
+        # the very simple approximation
+        v_bar_r0 = v_offset + v_slope_offset * r0[-1] + v_slope_slope * (r0[-1] ** 2)  # v_bar(r(t))
+        r0.append(r0[-1] + (v_x + v_bar_r0 * tau / T) * dt)
 
         # the approximation:
         v_bar_r1 = v_offset + v_slope_offset * r1[-1] + v_slope_slope * (r1[-1] ** 2)  # v_bar(r(t))
@@ -50,7 +55,8 @@ fig, ax = plt.subplots()
 ax.axvline(T, color='C4')  # marks the theta period
 ax.plot(time, x[:-1], label='x')
 i_T = np.argmax(time >= T)
-ax.plot(time[:i_T], r1[1:], label='approx.')
+ax.plot(time[:i_T], r0[1:], label='simple approx.')
+ax.plot(time[:i_T], r1[1:], label='good approx.')
 ax.plot(time[:i_T], r2[1:], label='true')
 ax.axvline(T + tau, linestyle='dotted', color='k')
 i_T_tau = np.argmax(time >= T + tau)
@@ -59,10 +65,10 @@ ax.legend(loc='lower center')
 ax.set_ylim(0, max(x))
 
 
-# plot v_bar
-fig, ax = plt.subplots()
-ax.plot(x[1:], v_bar_x)
-ax.set_ylabel(r"$\bar{v}$ (cm/s)")
-ax.set_xlabel("position (cm)")
+# # plot v_bar
+# fig, ax = plt.subplots()
+# ax.plot(x[1:], v_bar_x)
+# ax.set_ylabel(r"$\bar{v}$ (cm/s)")
+# ax.set_xlabel("position (cm)")
 
 plt.show()
