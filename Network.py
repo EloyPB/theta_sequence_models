@@ -84,10 +84,10 @@ class Network(SmartSim):
 
         self.run(reset_indices, reset_value, learning_rate)
 
-    def plot_rec_weights(self, fig_size=(5, 5), inset_up_to=None):
+    def plot_rec_weights(self, fig_size=(5, 5), inset_up_to=None, c_map='binary'):
         fig, ax = plt.subplots(1, constrained_layout=True, figsize=fig_size)
-        mat = ax.matshow(self.w_rec, aspect='auto', origin='lower', cmap='binary')
-        ax.plot((0, self.num_units), (0, self.num_units), linestyle='dashed', color='w')
+        mat = ax.matshow(self.w_rec, aspect='auto', origin='lower', cmap=c_map)
+        ax.plot((0, self.num_units), (0, self.num_units), linestyle='dashed', color='C3')
         ax.set_xlim((-0.5, self.num_units - 0.5))
         ax.set_ylim((-0.5, self.num_units - 0.5))
         ax.xaxis.set_ticks_position('bottom')
@@ -101,8 +101,8 @@ class Network(SmartSim):
         if inset_up_to is not None:
             axins = inset_axes(ax, width="35%", height="35%", loc='lower left', bbox_to_anchor=(0.615, 0.12, 1.1, 1.1),
                                borderpad=0, bbox_transform=ax.transAxes)
-            axins.matshow(self.w_rec[:inset_up_to, :inset_up_to], aspect='auto', origin='lower', cmap='binary')
-            axins.plot((0, inset_up_to), (0, inset_up_to), linestyle='dashed', color='w')
+            axins.matshow(self.w_rec[:inset_up_to, :inset_up_to], aspect='auto', origin='lower', cmap=c_map)
+            axins.plot((0, inset_up_to), (0, inset_up_to), linestyle='dashed', color='C3')
             axins.set_xlim((-0.5, inset_up_to - 0.5))
             axins.set_ylim((-0.5, inset_up_to - 0.5))
             axins.set_xticks((0, inset_up_to/2))
@@ -470,7 +470,7 @@ if __name__ == "__main__":
     # network.track.plot_features()
     # network.track.plot_features_heatmap()
 
-    network.plot_rec_weights(fig_size=(5.5*CM, 4.42*CM), inset_up_to=30)
+    network.plot_rec_weights(fig_size=(5.5*CM, 4.42*CM), inset_up_to=15, c_map='binary')
     # network.plot_activities(apply_f=1)
 
     # show facilitation and depression in a few cycles at the beginning:
