@@ -24,9 +24,9 @@ color_dict = {'red':   [[0,  c0[0], c0[0]],
 cm = LinearSegmentedColormap('BlueYellow', color_dict)
 
 
-# cm = 'terrain'
-num_cells = 6
+cm = 'terrain'
+num_cells = 5
 
 fig, ax = plt.subplots()
-ax.scatter(np.arange(num_cells), np.ones(num_cells), c=np.arange(num_cells), cmap=cm)
+ax.scatter(np.arange(num_cells), np.ones(num_cells), c=np.arange(num_cells), cmap=cm, vmax=1.2*num_cells)
 plt.show()
