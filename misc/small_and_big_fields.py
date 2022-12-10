@@ -19,7 +19,7 @@ color_dict = {'red':   [[0,  c0[0], c0[0]],
               'blue':  [[0,  c0[2], c0[2]],
                         [0.50,  c1[2], c1[2]],
                         [1.0,  c2[2], c2[2]]]}
-cm = LinearSegmentedColormap('BlueYellow', color_dict)
+cm = LinearSegmentedColormap('PurpleCyan', color_dict)
 
 
 # length = 100
