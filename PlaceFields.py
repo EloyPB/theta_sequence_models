@@ -2,21 +2,23 @@ import copy
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter1d
-from Network import Network, LinearTrack
+from LinearTrack import LinearTrack
+from AbstractNetwork import AbstractNetwork
+from NetworkIntDriven import NetworkIntDriven
 from generic.smart_sim import Config, SmartSim
 from batch_config import *
 from small_plots import *
 
 
 class PlaceFields(SmartSim):
-    dependencies = [Network]
+    dependencies = [NetworkClass]
 
     def __init__(self, bin_size, sigma, min_peak, threshold, prominence_threshold=0.33, last_unit=None,
                  dens_window_size=10, dens_window_stride=2, config=Config(), d={}):
         SmartSim.__init__(self, config, d)
 
-        self.network: Network = d['Network']
-        self.track: LinearTrack = self.network.d['LinearTrack']
+        self.network: AbstractNetwork = d[NetworkClass.__name__]
+        self.track: LinearTrack = self.network.track
         self.track.compute_summary_speeds(bin_size)
 
         self.bin_size = bin_size
@@ -317,7 +319,7 @@ if __name__ == "__main__":
 
     variants = {
         # 'LinearTrack': 'Many',
-        'Network': 'Log80'
+        'NetworkIntDriven': 'Log80'
     }
     pf = PlaceFields.current_instance(Config(identifier=1, variants=variants, pickle_instances=True,
                                              figures_root_path=figures_path, pickles_root_path=pickles_path,

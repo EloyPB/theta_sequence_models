@@ -7,7 +7,8 @@ import seaborn as sns
 import pandas as pd
 from generic.smart_sim import Config, SmartSim
 from LinearTrack import LinearTrack
-from Network import Network
+from AbstractNetwork import AbstractNetwork
+from NetworkIntDriven import NetworkIntDriven
 from PlaceFields import PlaceFields
 from Decoder import Decoder
 from small_plots import *
@@ -21,7 +22,7 @@ class ThetaSweeps(SmartSim):
         SmartSim.__init__(self, config, d)
         self.decoder: Decoder = d['Decoder']
         self.fields: PlaceFields = self.decoder.fields
-        self.network: Network = self.decoder.network
+        self.network: AbstractNetwork = self.decoder.network
         self.track: LinearTrack = self.network.track
 
         self.min_steps_ok = self.network.theta_cycle_steps * min_fraction_ok
@@ -198,7 +199,7 @@ class ThetaSweeps(SmartSim):
 
 if __name__ == "__main__":
     # plt.rcParams.update({'font.size': 11})
-    variants = {'Network': 'Log80'}
+    variants = {'NetworkIntDriven': 'Log80'}
 
     sweeps = ThetaSweeps.current_instance(Config(identifier=1, variants=variants, pickle_instances=True,
                                                  figures_root_path=figures_path, pickles_root_path=pickles_path,

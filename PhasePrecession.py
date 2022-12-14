@@ -3,7 +3,8 @@ import numpy as np
 from scipy import odr
 import matplotlib.pyplot as plt
 from matplotlib import ticker
-from PlaceFields import LinearTrack, Network, PlaceFields, SmartSim, Config
+from AbstractNetwork import AbstractNetwork
+from PlaceFields import LinearTrack, PlaceFields, SmartSim, Config
 from small_plots import *
 from batch_config import *
 
@@ -15,8 +16,8 @@ class PhasePrecession(SmartSim):
         SmartSim.__init__(self, config, d)
 
         self.fields: PlaceFields = d['PlaceFields']
-        self.network: Network = self.fields.d['Network']
-        self.track: LinearTrack = self.network.d['LinearTrack']
+        self.network: AbstractNetwork = self.fields.network
+        self.track: LinearTrack = self.network.track
 
         self.num_units = self.fields.last_unit
         self.spatial_bin_size = self.fields.bin_size
@@ -233,7 +234,7 @@ class PhasePrecession(SmartSim):
 if __name__ == "__main__":
     # plt.rcParams.update({'font.size': 11})
 
-    pp = PhasePrecession.current_instance(Config(variants={'LinearTrack': 'ManyLaps', 'Network': 'Log80'}, identifier=1,
+    pp = PhasePrecession.current_instance(Config(variants={'LinearTrack': 'ManyLaps', 'NetworkIntDriven': 'Log80'}, identifier=1,
                                                  pickle_instances=True, save_figures=True,
                                                  figures_root_path=figures_path, pickles_root_path=pickles_path,
                                                  figure_format='pdf'))

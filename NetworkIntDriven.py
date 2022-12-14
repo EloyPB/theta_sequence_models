@@ -1,4 +1,3 @@
-import sys
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -6,35 +5,23 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib import colors
 import matplotlib.ticker as ticker
 from matplotlib.ticker import FormatStrFormatter
-from LinearTrack import LinearTrack
-from generic.smart_sim import Config, SmartSim
+from AbstractNetwork import AbstractNetwork
+from generic.smart_sim import Config
 from small_plots import *
 from batch_config import *
 
 
 TWO_PI = 2 * np.pi
 
-class Network(SmartSim):
-    dependencies = [LinearTrack]
 
+class NetworkIntDriven(AbstractNetwork):
     def __init__(self, num_units, tau, w_rec_sigma, w_rec_exc, w_rec_inh, w_rec_shift, act_sigmoid_gain,
                  act_sigmoid_midpoint, theta_min, theta_max, theta_concentration, base_f, tau_f, tau_d, pos_factor_0,
                  pos_factor_concentration, pos_factor_phase, pos_sigmoid_gain, pos_sigmoid_midpoint, reset_indices,
                  reset_value, learning_rate, log_act=False, log_theta=False, log_pos_input=False, log_dynamics=False,
                  log_after=0, config=Config(), d={}):
 
-        SmartSim.__init__(self, config, d)
-
-        if 'LinearTrack' in d:
-            self.track: LinearTrack = d['LinearTrack']
-        else:
-            sys.exit("A LinearTrack instance should be provided in d")
-
-        self.num_units = num_units
-        self.tau = tau
-        self.dt_over_tau = self.track.dt / tau
-        self.first_logged_step = int(log_after / self.track.dt)
-        logged_steps = len(self.track.x_log) - self.first_logged_step
+        AbstractNetwork.__init__(self, num_units, tau, log_act, log_theta, log_pos_input, log_after, config, d)
 
         # initialize recurrent weights
         self.w_rec = np.empty((num_units, num_units))
@@ -48,8 +35,6 @@ class Network(SmartSim):
         self.theta_max = theta_max
         self.theta_concentration = theta_concentration
         self.theta_multiplier = (theta_max - theta_min) / np.exp(theta_concentration)
-        self.theta_cycle_steps = 1 / (8 * self.track.dt)
-        self.theta_phase_inc = TWO_PI / self.theta_cycle_steps
 
         self.base_f = base_f
         self.tau_f = tau_f
@@ -61,26 +46,11 @@ class Network(SmartSim):
         self.pos_sigmoid_gain = pos_sigmoid_gain
         self.pos_sigmoid_midpoint = pos_sigmoid_midpoint
         self.w_pos = np.zeros((self.num_units, self.track.num_features))
-        self.log_pos_input = log_pos_input
-        if log_pos_input:
-            self.pos_input_log = np.empty((logged_steps, num_units))
 
         self.log_dynamics = log_dynamics
         if log_dynamics:
-            self.depression_log = np.empty((logged_steps, num_units))
-            self.facilitation_log = np.empty((logged_steps, num_units))
-
-        self.log_act = log_act
-        if log_act:
-            self.act_log = np.empty((logged_steps, num_units))
-        self.act_out_log = np.empty((logged_steps, num_units))
-
-        self.log_theta = log_theta
-        if log_theta:
-            self.theta_log = np.empty(logged_steps)
-        self.theta_phase_log = np.empty(logged_steps)
-        self.theta_phase_log[-1] = 0
-        self.theta_cycle_starts = []
+            self.depression_log = np.empty((self.logged_steps, num_units))
+            self.facilitation_log = np.empty((self.logged_steps, num_units))
 
         self.run(reset_indices, reset_value, learning_rate)
 
@@ -402,14 +372,14 @@ class Network(SmartSim):
 
         fig, ax = plt.subplots(3, sharex='col', figsize=fig_size)
         mat0 = ax[0].matshow(self.depression_log[index_start:index_end, first_unit:last_unit].T, aspect="auto",
-                             origin="lower", extent=extent, cmap='cividis')
+                             origin="lower", extent=extent, cmap='viridis')
         ax[0].plot(time, np.array(top_profiles), 'k', linewidth=0.5)
         ax[0].plot(time, np.array(bottom_profiles), 'k', linewidth=0.5)
         bar0 = plt.colorbar(mat0, ax=ax[0])
         bar0.set_label("D")
 
         mat1 = ax[1].matshow(self.facilitation_log[index_start:index_end, first_unit:last_unit].T, aspect="auto",
-                             origin="lower", extent=extent, cmap='cividis')
+                             origin="lower", extent=extent, cmap='viridis')
         ax[1].plot(time, np.array(top_profiles), 'k', linewidth=0.5)
         ax[1].plot(time, np.array(bottom_profiles), 'k', linewidth=0.5)
         bar1 = plt.colorbar(mat1, ax=ax[1])
@@ -417,7 +387,7 @@ class Network(SmartSim):
 
         mat2 = ax[2].matshow(((1-self.depression_log[index_start:index_end, first_unit:last_unit])
                              * self.facilitation_log[index_start:index_end, first_unit:last_unit]).T,
-                             aspect="auto", origin="lower", extent=extent, cmap='cividis')
+                             aspect="auto", origin="lower", extent=extent, cmap='viridis')
         ax[2].plot(time, np.array(top_profiles), 'k', linewidth=0.5)
         ax[2].plot(time, np.array(bottom_profiles), 'k', linewidth=0.5)
         bar2 = plt.colorbar(mat2, ax=ax[2])
@@ -460,23 +430,23 @@ if __name__ == "__main__":
     config = Config(identifier=2, variants={
         'LinearTrack': 'OneLap',
         # 'LinearTrack': 'FixSpeed',
-        'Network': 'LogAll'
-        # 'Network': 'LogPosInput80'
-    }, pickle_instances=True, save_figures=True, figures_root_path=figures_path, pickles_root_path=pickles_path,
+        'NetworkIntDriven': 'LogAll'
+        # 'NetworkIntDriven': 'LogPosInput80'
+    }, pickle_instances=True, save_figures=False, figures_root_path=figures_path, pickles_root_path=pickles_path,
                     figure_format='pdf')
-    network = Network.current_instance(config)
+    network = NetworkIntDriven.current_instance(config)
 
     # network.track.plot_trajectory()
     # network.track.plot_features()
     # network.track.plot_features_heatmap()
 
-    network.plot_rec_weights(fig_size=(5.5*CM, 4.42*CM), inset_up_to=15, c_map='binary')
+    # network.plot_rec_weights(fig_size=(5.5*CM, 4.42*CM), inset_up_to=15, c_map='binary')
     # network.plot_activities(apply_f=1)
 
     # show facilitation and depression in a few cycles at the beginning:
     # network.plot_dynamics(t_start=1.255, t_end=2.265, first_unit=28, last_unit=78, apply_f=1, fig_size=(12*CM, 10*CM))
-    # network.plot_dynamics_and_act_profile(t_start=1.255, t_end=2.265, first_unit=28, last_unit=78,
-    #                                       fig_size=(8.5 * CM, 11.35 * CM))
+    network.plot_dynamics_and_act_profile(t_start=1.255, t_end=2.265, first_unit=28, last_unit=78,
+                                          fig_size=(8.5 * CM, 11.35 * CM))
 
     # # zoom in on one run at the beginning:
     # network.plot_activities(apply_f=1, pos_input=0, theta=0, speed=1, t_start=1.255, t_end=2.265,
