@@ -1,0 +1,11 @@
+{
+  "num_units": 100,
+  "tau": 0.01,
+  "theta_min": -1,
+  "theta_max": 0,
+  "theta_concentration": 12,
+  "pos_factor_0": 1,
+  "pos_factor_concentration": 2,
+  "pos_factor_phase": 90,
+  "learning_rate": 0.00005
+}
