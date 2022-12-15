@@ -114,8 +114,6 @@ class NetworkExtDriven(AbstractNetwork):
             et = np.zeros(self.num_units)
             ins_signal = np.zeros(self.num_units)
 
-            self.w_exc /= np.max(self.w_exc, axis=0)
-
             if verbose:
                 print(f"running lap {lap}...")
                 print(f"w_exc_max = {self.w_exc.max()}")
@@ -125,8 +123,11 @@ class NetworkExtDriven(AbstractNetwork):
             else:
                 last_lap_step = len(self.track.x_log)
 
+            max_overlaps = np.zeros((self.num_units, self.num_units))
+
             for t_step in range(lap_start_step, last_lap_step):
                 i = t_step - self.first_logged_step
+
 
                 # compute theta phase and theta inhibition
                 theta_phase += self.theta_phase_inc
@@ -135,76 +136,76 @@ class NetworkExtDriven(AbstractNetwork):
                     if i >= 0:
                         self.theta_cycle_starts.append(i)
 
-                if 0 < theta_phase < np.pi/4:
-                    theta = -1
-                else:
-                    theta = 0
-
-                if np.pi/4 < theta_phase < np.pi/2:
-                    spatial_bin = int(self.track.x_log[t_step] / self.track.ds)
-                    pos_input = self.pos_factor_0 * self.sensory_fields[spatial_bin]
-
-                    delta_et = (act_out - et) * self.track.dt / self.et_tau
-                    et = np.maximum(act_out, et + delta_et)
-
-                    delta_ins_signal = (act_out - ins_signal) * self.track.dt / self.ins_signal_tau
-                    ins_signal = np.maximum(act_out, ins_signal + delta_ins_signal)
-                else:
-                    pos_input = 0
-                    et += -et * self.track.dt / self.et_tau
-                    ins_signal += -ins_signal * self.track.dt / self.ins_signal_tau
-
-                if theta_phase > np.pi/2:
-                    rec_input = (self.w_exc + self.w_inh) @ act_out
-                else:
-                    rec_input = 0
-                # rec_input = 0
-
-                act += (-act + pos_input + theta + rec_input) * self.dt_over_tau
-                act_out = self.f_act(act)
-
-                et_overlap = et * ins_signal.reshape(-1, 1)
-
-
-                # theta = (-np.exp(self.theta_concentration * np.cos(theta_phase))
-                #          * self.theta_multiplier + self.theta_max)
+                # if 0 < theta_phase < np.pi/4:
+                #     theta = -1
+                # else:
+                #     theta = 0
                 #
-                # # compute sensory input
-                # pos_factor = (np.exp(self.pos_factor_concentration
-                #                      * np.cos(theta_phase - self.pos_factor_phase))
-                #               / exp_concentration)
-                # spatial_bin = int(self.track.x_log[t_step] / self.track.ds)
-                # pos_input = self.pos_factor_0 * pos_factor * self.sensory_fields[spatial_bin]
+                # if np.pi/4 < theta_phase < np.pi/2:
+                #     spatial_bin = int(self.track.x_log[t_step] / self.track.ds)
+                #     pos_input = self.pos_factor_0 * self.sensory_fields[spatial_bin]
                 #
-                # # compute recurrent input
-                # rec_factor = 1 - pos_factor
-                # # rec_input = self.sigmoid(self.w_exc @ act_out, 0.5, 4) + self.w_inh * np.sum(act_out)
-                # rec_input = (self.w_exc + self.w_inh) @ act_out
+                #     delta_et = (act_out - et) * self.track.dt / self.et_tau
+                #     et = np.maximum(act_out, et + delta_et)
                 #
-                # # update activity
-                # act += (-act + pos_input + theta + rec_factor * rec_input) * self.dt_over_tau
-                # # act += (-act + pos_input + theta) * self.dt_over_tau
+                #     delta_ins_signal = (act_out - ins_signal) * self.track.dt / self.ins_signal_tau
+                #     ins_signal = np.maximum(act_out, ins_signal + delta_ins_signal)
+                # else:
+                #     pos_input = 0
+                #     et += -et * self.track.dt / self.et_tau
+                #     ins_signal += -ins_signal * self.track.dt / self.ins_signal_tau
+                #
+                # if theta_phase > np.pi/2:
+                #     rec_input = (self.w_exc + self.w_inh) @ act_out
+                # else:
+                #     rec_input = 0
+                # # rec_input = 0
+                #
+                # act += (-act + pos_input + theta + rec_input) * self.dt_over_tau
                 # act_out = self.f_act(act)
                 #
-                # # update eligibility trace
-                # delta_et = (act_out * pos_factor - et) * self.track.dt / self.et_tau
-                # et = np.maximum(act_out * pos_factor, et + delta_et)
-                #
-                # # update instructive signals
-                # delta_ins_signal = (act_out * pos_factor - ins_signal) * self.track.dt / self.ins_signal_tau
-                # ins_signal = np.maximum(act_out * pos_factor, ins_signal + delta_ins_signal)
+                # et_overlap = et * ins_signal.reshape(-1, 1)
+
+                theta = (-np.exp(self.theta_concentration * np.cos(theta_phase))
+                         * self.theta_multiplier + self.theta_max)
+
+                # compute sensory input
+                pos_factor = (np.exp(self.pos_factor_concentration
+                                     * np.cos(theta_phase - self.pos_factor_phase))
+                              / exp_concentration)
+                spatial_bin = int(self.track.x_log[t_step] / self.track.ds)
+                pos_input = self.pos_factor_0 * pos_factor * self.sensory_fields[spatial_bin]
+
+                # compute recurrent input
+                rec_factor = 1 - pos_factor
+                # rec_input = self.sigmoid(self.w_exc @ act_out, 0.5, 4) + self.w_inh * np.sum(act_out)
+                rec_input = (self.w_exc + self.w_inh) @ act_out
+
+                # update activity
+                act += (-act + pos_input + theta + rec_factor * rec_input) * self.dt_over_tau
+                # act += (-act + pos_input + theta) * self.dt_over_tau
+                act_out = self.f_act(act)
+
+                # update eligibility trace
+                delta_et = (act_out * pos_factor - et) * self.track.dt / self.et_tau
+                et = np.maximum(act_out * pos_factor, et + delta_et)
+
+                # update instructive signals
+                delta_ins_signal = (act_out * pos_factor - ins_signal) * self.track.dt / self.ins_signal_tau
+                ins_signal = np.maximum(act_out * pos_factor, ins_signal + delta_ins_signal)
 
                 # update weights
-                # et_overlap = et * ins_signal.reshape(-1, 1) * pos_factor
+                et_overlap = et * ins_signal.reshape(-1, 1) * pos_factor
                 # self.w_exc += learning_rate * ((self.w_exc_max - self.w_exc) * self.k_plus
                 #                                * self.sigmoid(et_overlap, self.alpha_plus, self.beta_plus)
                 #                                - self.w_exc * self.k_minus
                 #                                * self.sigmoid(et_overlap, self.alpha_minus, self.beta_minus))
 
-                if lap < 29:
-                    self.w_exc += learning_rate * et_overlap
-                    # self.w_exc -= 2*learning_rate*learning_rate*self.w_exc
-                    # self.w_exc /= np.max(self.w_exc, axis=0)
+                max_overlaps = np.maximum(max_overlaps, et_overlap)
+
+                # self.w_exc += learning_rate * et_overlap * pos_factor
+                # # self.w_exc -= 2*learning_rate*learning_rate*self.w_exc
+                # self.w_exc /= np.max(self.w_exc, axis=0)
 
                 if i >= 0:
                     self.theta_phase_log[i] = theta_phase
@@ -217,6 +218,10 @@ class NetworkExtDriven(AbstractNetwork):
                         self.pos_input_log[i] = pos_input
                     if self.log_et:
                         self.et_log[i] = et
+
+            self.w_exc += 0.1 * max_overlaps
+            # self.w_exc /= np.max(self.w_exc, axis=0)
+            self.w_exc /= np.max(np.maximum(self.w_exc, 0.8), axis=0)
 
     def plot_activities(self, t_start=0, t_end=None, first_unit=0, last_unit=None, apply_f=False, et=False,
                         pos_input=False, theta=False, speed=False, fig_size=(6.4, 4.8)):
