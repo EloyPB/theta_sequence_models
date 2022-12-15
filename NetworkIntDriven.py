@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib as mpl
-import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib import colors
 import matplotlib.ticker as ticker
@@ -8,7 +7,7 @@ from matplotlib.ticker import FormatStrFormatter
 from AbstractNetwork import AbstractNetwork
 from generic.smart_sim import Config
 from small_plots import *
-from batch_config import *
+from batch_config import pickles_path, figures_path
 
 
 TWO_PI = 2 * np.pi
@@ -161,8 +160,12 @@ class NetworkIntDriven(AbstractNetwork):
 
     def plot_activities(self, t_start=0, t_end=None, first_unit=0, last_unit=None, apply_f=False, pos_input=False,
                         theta=False, speed=False, fig_size=(6.4, 4.8)):
+
         index_start = max(int(t_start / self.track.dt) - self.first_logged_step, 0)
-        index_end = int(t_end / self.track.dt) - self.first_logged_step if t_end is not None else len(self.act_out_log)
+        t_start = (index_start + self.first_logged_step) * self.track.dt
+        index_end = min(int(t_end / self.track.dt) - self.first_logged_step, len(self.track.x_log)) \
+            if t_end is not None else len(self.act_out_log)
+        t_end = (index_end + self.first_logged_step) * self.track.dt
 
         if last_unit is None:
             last_unit = self.num_units
@@ -176,9 +179,7 @@ class NetworkIntDriven(AbstractNetwork):
             v_min = act_log.min()
             v_max = act_log.max()
 
-        extent = ((index_start + self.first_logged_step) * self.track.dt - self.track.dt / 2,
-                  (index_end + self.first_logged_step) * self.track.dt - self.track.dt / 2,
-                  first_unit - 0.5, last_unit - 0.5)
+        extent = (t_start - self.track.dt / 2, t_end - self.track.dt / 2, first_unit - 0.5, last_unit - 0.5)
 
         rows = 2 + theta + speed
         fig = plt.figure(constrained_layout=True, figsize=fig_size)
@@ -188,10 +189,7 @@ class NetworkIntDriven(AbstractNetwork):
         spec = fig.add_gridspec(rows, 2, height_ratios=height_ratios, width_ratios=[1, 0.03])
 
         ax0 = fig.add_subplot(spec[0:2, 0])
-        mat = ax0.matshow(act_log.T, aspect="auto", origin="lower", extent=extent,
-                          cmap='Blues',
-                          # cmap='viridis',
-                          vmin=v_min, vmax=v_max)
+        mat = ax0.matshow(act_log.T, aspect="auto", origin="lower", extent=extent, cmap='Blues', vmin=v_min, vmax=v_max)
 
         ax0.set_title("Network activities")
         ax0.set_ylabel("Place cell #")
@@ -206,16 +204,12 @@ class NetworkIntDriven(AbstractNetwork):
 
         if pos_input:
             # foreground = colors.LinearSegmentedColormap.from_list('f', [(0, 0, 0, 0), (1, 1, 1, 1)], N=100)  # white
-            # foreground = colors.LinearSegmentedColormap.from_list('f', [(0, 0, 0, 0), (1, 0, 1, 1)], N=100)  # magenta
-            foreground = colors.LinearSegmentedColormap.from_list('f', [(44/255, 160/255, 44/255, 0), (44/255, 160/255, 44/255, 1)], N=100)  # tab:green
-            # foreground = colors.LinearSegmentedColormap.from_list('f', [(148/255, 103/255, 189/255, 0), (148/255, 103/255, 189/255, 1)], N=100)  # tab:purple
-            # foreground = colors.LinearSegmentedColormap.from_list('f', [(31/255, 119/255, 188/255, 0), (31/255, 119/255, 188/255, 1)], N=100)  # tab:blue
+            foreground = colors.LinearSegmentedColormap.from_list('f', [(44/255, 160/255, 44/255, 0),
+                                                                        (44/255, 160/255, 44/255, 1)], N=100)  # tab:green
 
+            matb = ax0.matshow(self.pos_input_log[index_start:index_end, first_unit:last_unit].T, aspect="auto",
+                               origin="lower", extent=extent, cmap=foreground, vmin=0, vmax=1)
 
-            matb = ax0.matshow(self.pos_input_log[index_start:index_end, first_unit:last_unit].T, aspect="auto", origin="lower",
-                               extent=extent, cmap=foreground, vmin=0, vmax=1)
-            # c_map = colors.LinearSegmentedColormap.from_list('f', [(0, 0, 0, 1), (1, 1, 1, 1)], N=100)
-            # color_bar = fig.colorbar(mpl.cm.ScalarMappable(norm=matb.norm, cmap=c_map), cax=fig.add_subplot(spec[0, 1]))
             color_bar = fig.colorbar(matb, cax=fig.add_subplot(spec[0, 1]))
             color_bar.set_label("Spatial Input")
             color_bar.locator = ticker.MultipleLocator(0.5)
@@ -223,8 +217,8 @@ class NetworkIntDriven(AbstractNetwork):
 
         if theta:
             ax1 = fig.add_subplot(spec[2, 0], sharex=ax0)
-            time = np.arange(self.first_logged_step, self.first_logged_step + len(self.act_out_log)) * self.track.dt
-            ax1.plot(time, self.theta_log)
+            time = np.arange(t_start, t_end, self.track.dt)
+            ax1.plot(time, self.theta_log[index_start:index_end])
             ax1.set_ylabel("Theta")
             ax1.set_xlabel("Time (s)")
             ax1.spines.right.set_visible(False)
@@ -232,10 +226,8 @@ class NetworkIntDriven(AbstractNetwork):
 
         if speed:
             ax2 = fig.add_subplot(spec[2 + theta, 0], sharex=ax0)
-            time = np.arange(self.first_logged_step, self.first_logged_step + len(self.act_out_log)) * self.track.dt
-            ax2.plot(time, self.track.speed_log[self.first_logged_step:], color='C7')
-            # max_v = max(max(self.track.speed_log) - 1, 1 - min(self.track.speed_log)) * 1.05
-            # ax2.set_ylim(1 - max_v, 1 + max_v)
+            time = np.arange(t_start, t_end, self.track.dt)
+            ax2.plot(time, self.track.speed_log[index_start:index_end], color='C7')
             ax2.set_ylabel("Speed (cm/s)")
             ax2.set_xlabel("Time (s)")
             ax2.spines.right.set_visible(False)
@@ -430,8 +422,7 @@ if __name__ == "__main__":
     config = Config(identifier=2, variants={
         'LinearTrack': 'OneLap',
         # 'LinearTrack': 'FixSpeed',
-        'NetworkIntDriven': 'LogAll'
-        # 'NetworkIntDriven': 'LogPosInput80'
+        'NetworkIntDriven': 'IntDrivenLogAll'
     }, pickle_instances=True, save_figures=False, figures_root_path=figures_path, pickles_root_path=pickles_path,
                     figure_format='pdf')
     network = NetworkIntDriven.current_instance(config)
@@ -441,12 +432,12 @@ if __name__ == "__main__":
     # network.track.plot_features_heatmap()
 
     # network.plot_rec_weights(fig_size=(5.5*CM, 4.42*CM), inset_up_to=15, c_map='binary')
-    # network.plot_activities(apply_f=1)
+    network.plot_activities(apply_f=1)
 
     # show facilitation and depression in a few cycles at the beginning:
     # network.plot_dynamics(t_start=1.255, t_end=2.265, first_unit=28, last_unit=78, apply_f=1, fig_size=(12*CM, 10*CM))
-    network.plot_dynamics_and_act_profile(t_start=1.255, t_end=2.265, first_unit=28, last_unit=78,
-                                          fig_size=(8.5 * CM, 11.35 * CM))
+    # network.plot_dynamics_and_act_profile(t_start=1.255, t_end=2.265, first_unit=28, last_unit=78,
+    #                                       fig_size=(8.5 * CM, 11.35 * CM))
 
     # # zoom in on one run at the beginning:
     # network.plot_activities(apply_f=1, pos_input=0, theta=0, speed=1, t_start=1.255, t_end=2.265,

@@ -1,13 +1,11 @@
 import os
 import sys
 from socket import gethostname
-from NetworkIntDriven import NetworkIntDriven
+
 
 NUM_RUNS = 10
 
-NetworkClass = NetworkIntDriven
-
-variants = {'NetworkIntDriven': 'Log80'}
+variants = {'NetworkIntDriven': 'IntDrivenLog80'}
 
 
 # DEFINE PATHS (change according to your file system!)

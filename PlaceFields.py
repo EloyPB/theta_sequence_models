@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter1d
 from LinearTrack import LinearTrack
 from AbstractNetwork import AbstractNetwork
-from NetworkIntDriven import NetworkIntDriven
+from NetworkClass import NetworkClass
 from generic.smart_sim import Config, SmartSim
 from batch_config import *
 from small_plots import *
@@ -319,7 +319,7 @@ if __name__ == "__main__":
 
     variants = {
         # 'LinearTrack': 'Many',
-        'NetworkIntDriven': 'Log80'
+        'NetworkIntDriven': 'IntDrivenLog80'
     }
     pf = PlaceFields.current_instance(Config(identifier=1, variants=variants, pickle_instances=True,
                                              figures_root_path=figures_path, pickles_root_path=pickles_path,

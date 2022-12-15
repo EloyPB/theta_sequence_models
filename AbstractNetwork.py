@@ -1,7 +1,7 @@
+import sys
 import numpy as np
 from LinearTrack import LinearTrack
 from generic.smart_sim import Config, SmartSim
-from batch_config import *
 
 
 class AbstractNetwork(SmartSim):
