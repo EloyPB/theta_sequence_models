@@ -1,11 +1,10 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from theta_color_map import cm
 from small_plots import *
 
 
 length = 100
-theta_distance = 40
+theta_distance = 20
 dt = 0.001
 x_start = 0
 x_end = 100
@@ -29,17 +28,13 @@ for t in t_log[1:]:
     x_log.append(x_log[-1] + v * dt)
     if x_log[-1] >= x_end:
         x_log[-1] = x_start
-    if 24.5 < x_log[-1] < 25.5 and theta_phase > 0.48:
-        print()
     r_log.append(x_log[-1] + theta_distance * theta_phase)
     if np.random.random() < 30 * dt * np.exp(-(r_log[-1] - length/2)**2/(2*sigma**2)):
         spike_phase_log.append((theta_phase + 0.5) * 360)
         spike_x_log.append(x_log[-1])
 
 
-print((np.array(r_log) - np.array(x_log)).max())
-
-fig, ax = plt.subplots(2, sharex='col', figsize=(10*CM, 5*CM), constrained_layout=True)
+fig, ax = plt.subplots(2, sharex='col', figsize=(8*CM, 4*CM), constrained_layout=True)
 ax[0].set_xlim((0, length))
 ax[0].set_ylim((0, 1))
 ax[0].axis('off')
@@ -52,7 +47,7 @@ sweep = ax[0].imshow(np.vstack((np.linspace(0, 1, 100), np.linspace(0, 1, 100)))
                      extent=(length/2 - theta_distance/2, length/2 + theta_distance/2, 0, 0.1), aspect='auto')
 
 
-sc = ax[1].scatter(spike_x_log, spike_phase_log, c=spike_phase_log, vmin=0, vmax=360, cmap=cm)
+sc = ax[1].scatter(spike_x_log, spike_phase_log, c=spike_phase_log, vmin=0, vmax=360, cmap=cm, s=1.2)
 ax[1].set_ylim((0, 360))
 ax[1].spines.right.set_visible(False)
 ax[1].spines.top.set_visible(False)
