@@ -5,7 +5,7 @@ from socket import gethostname
 
 NUM_RUNS = 10
 
-variants = {'NetworkIntDriven': 'IntDrivenLog80'}
+variants = {'NetworkIntDriven': 'IntDrivenLog80', 'NetworkExtDriven': 'ExtDrivenLog100'}
 
 
 # DEFINE PATHS (change according to your file system!)

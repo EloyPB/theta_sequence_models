@@ -36,9 +36,10 @@ class ThetaSweeps(SmartSim):
 
         self.start_indices = []  # first indices without nan values for each theta trajectory
         self.end_indices = []  # last indices without nan values for each theta trajectory
-        # self.slopes = []  # slope of the linear fit to the theta trajectory
-        # self.intercepts = []  # intercept of the linear fit to the theta trajectory
-        # self.fit_starts = []  # index where each of the linear fits starts
+
+        self.slopes = []  # slope of the linear fit to the theta trajectory
+        self.intercepts = []  # intercept of the linear fit to the theta trajectory
+        self.fit_starts = []  # index where each of the linear fits starts
 
         self.behind_lengths = None
 
@@ -49,9 +50,14 @@ class ThetaSweeps(SmartSim):
         not_nan = ~np.isnan(self.decoder.correlations).any(axis=1)
         indices_max[not_nan] = np.argmax(self.decoder.correlations[not_nan], axis=1)
 
-        x = np.arange(self.network.theta_cycle_steps)
-
         for start, end in zip(self.network.theta_cycle_starts[:-1], self.network.theta_cycle_starts[1:]):
+
+            # this was added for NetworkExtDriven, not sure if it changes results of NetworkIntDriven
+            # it shifts the boundaries of the theta cycle so that the sweep is surrounded by nans
+            start += np.argmax(np.isnan(indices_max[start:end]))
+            if end < indices_max.size:
+                end += np.argmax(np.isnan(indices_max[end:])) + 1
+
             indices_max_cycle = indices_max[start: end]
             if (indices_max_cycle == 0).any() or (indices_max_cycle == self.decoder.fields.num_bins - 1).any():
                 continue
@@ -69,14 +75,19 @@ class ThetaSweeps(SmartSim):
             self.start_indices.append(abs_start + left_offset)
             self.end_indices.append(abs_end - right_offset)
 
-            # fit = linregress(x[ok], indices_max_cycle[ok])
-            # self.slopes.append(fit.slope)
-            # self.intercepts.append(fit.intercept)
-            # self.fit_starts.append(abs_start)
-            # self.lengths.append(fit.slope * (self.end_indices[-1] - self.start_indices[-1] - 1) * self.fields.bin_size)
+            # # I used this for the NetworkIntDriven:
+            # self.trajectory_starts.append(np.nanmean(indices_max_cycle[left_offset:left_offset+self.side_steps]))
+            # self.trajectory_ends.append(np.nanmean(indices_max_cycle[-right_offset - self.side_steps:-right_offset]))
 
-            self.trajectory_starts.append(np.nanmean(indices_max_cycle[left_offset:left_offset+self.side_steps]))
-            self.trajectory_ends.append(np.nanmean(indices_max_cycle[-right_offset - self.side_steps:-right_offset]))
+            # # and this for the NetworkExtDriven:
+            x = np.arange(indices_max_cycle.size)
+            fit = linregress(x[ok], indices_max_cycle[ok])
+            self.slopes.append(fit.slope)
+            self.intercepts.append(fit.intercept)
+            self.fit_starts.append(abs_start)
+            self.trajectory_starts.append(fit.intercept + fit.slope * (left_offset + self.side_steps/2))
+            self.trajectory_ends.append(fit.intercept + fit.slope * (abs_end - abs_start - right_offset - self.side_steps/2))
+
             self.real_pos_starts.append(np.mean(self.decoder.track.x_log[abs_start+left_offset:abs_start+left_offset+self.side_steps]))
             self.real_pos_ends.append(np.mean(self.decoder.track.x_log[abs_end-right_offset-self.side_steps:abs_end-right_offset]))
             self.lengths.append((self.trajectory_ends[-1] - self.trajectory_starts[-1]) * self.fields.bin_size)
@@ -199,16 +210,15 @@ class ThetaSweeps(SmartSim):
 
 if __name__ == "__main__":
     # plt.rcParams.update({'font.size': 11})
-    variants = {'NetworkIntDriven': 'IntDrivenLog80'}
+    variants = {'NetworkIntDriven': 'IntDrivenLog80', 'NetworkExtDriven': 'ExtDrivenLog100'}
 
     sweeps = ThetaSweeps.current_instance(Config(identifier=1, variants=variants, pickle_instances=True,
                                                  figures_root_path=figures_path, pickles_root_path=pickles_path,
                                                  save_figures=False, figure_format='png'))
     sweeps.plot(t_start=150.62, mark_edges=False, fig_size=(11*CM, 8.9*CM))
     # sweeps.plot(t_start=151.256, t_end=151.632, mark_sweep=False, mark_edges=True, fig_size=(3.5*CM, 3.5*CM))  # zoom in
-    # sweeps.length_vs_mean_speed(plot=True)
-    #
-    # sweeps.ahead_and_behind_vs_mean_speed(plot=True)
+    sweeps.length_vs_mean_speed(plot=True)
+    sweeps.ahead_and_behind_vs_mean_speed(plot=True)
     # sweeps.behind_length_vs_peak_shift(plot=True)
 
     plt.show()

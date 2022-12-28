@@ -28,7 +28,7 @@ class PlaceFields(SmartSim):
         self.min_peak = min_peak
         self.threshold = threshold
         self.prominence_threshold = prominence_threshold
-        self.last_unit = self.network.num_units if last_unit is None else last_unit
+        self.last_unit = min(self.network.num_units, self.network.num_units if last_unit is None else last_unit)
         self.dens_window_size = dens_window_size
         self.dens_window_stride = dens_window_stride
 
@@ -63,6 +63,8 @@ class PlaceFields(SmartSim):
         # c_map.set_bad(color='white')
         c_map = 'Blues'
         last_active_unit = np.argmax(np.nanmax(self.activations, axis=1) < 0.05)
+        if last_active_unit == 0:
+            last_active_unit = self.network.num_units
         mat = ax.matshow(self.activations[:last_active_unit], aspect='auto', cmap=c_map,
                          extent=(0, self.num_bins*self.bin_size, last_active_unit-0.5, -0.5))
         ax.xaxis.set_ticks_position('bottom')
@@ -319,17 +321,18 @@ if __name__ == "__main__":
 
     variants = {
         # 'LinearTrack': 'Many',
-        'NetworkIntDriven': 'IntDrivenLog80'
+        'NetworkIntDriven': 'IntDrivenLog80',
+        'NetworkExtDriven': 'ExtDrivenLog100'
     }
     pf = PlaceFields.current_instance(Config(identifier=1, variants=variants, pickle_instances=True,
                                              figures_root_path=figures_path, pickles_root_path=pickles_path,
                                              save_figures=True, figure_format='pdf'))
-    # pf.plot_activations(fig_size=(5*CM, 5*CM))
-    # pf.sizes_vs_mean_speed(colour_by_position=True, plot=True)
+    pf.plot_activations(fig_size=(5*CM, 5*CM))
+    pf.sizes_vs_mean_speed(colour_by_position=True, plot=True)
     # pf.density_vs_mean_speed()
 
     # pf.compute_true_fields()
-    pf.plot_true_field(unit=67, start=25, fig_size=(4.25*CM, 3*CM))
+    # pf.plot_true_field(unit=67, start=25, fig_size=(4.25*CM, 3*CM))
     # pf.field_peak_shifts(plot=True)
 
     # pf.slow_and_fast_sizes(plot=True)
