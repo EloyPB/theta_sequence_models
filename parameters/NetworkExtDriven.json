@@ -14,12 +14,5 @@
   "pos_factor_phase": 90,
   "learning_rate": 0.15,
   "w_inh": -0.62,
-  "w_exc_max": 1.2,
-  "k_plus": 1,
-  "alpha_plus": 0.2,
-  "beta_plus": 30,
-  "k_minus": 0.5,
-  "alpha_minus": 0.1,
-  "beta_minus": 200,
   "log_after": 0
 }

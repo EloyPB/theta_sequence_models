@@ -16,20 +16,19 @@ TWO_PI = 2 * np.pi
 class NetworkExtDriven(AbstractNetwork):
     dependencies = [LinearTrack]
 
-    def __init__(self, num_units, tau, et_tau, ins_signal_tau, sensory_field_sigma, act_sigmoid_gain, act_sigmoid_midpoint,
-                 theta_min, theta_max, theta_concentration,
-                 pos_factor_0, pos_factor_concentration, pos_factor_phase,
-                 learning_rate, w_inh, w_exc_max, k_plus, alpha_plus, beta_plus, k_minus, alpha_minus, beta_minus,
-                 log_act=False, log_et=False, log_theta=False, log_pos_input=False,
-                 log_after=0, config=Config(), d={}):
+    def __init__(self, num_units, tau, et_tau, ins_signal_tau, sensory_field_sigma, act_sigmoid_gain,
+                 act_sigmoid_midpoint, theta_min, theta_max, theta_concentration, pos_factor_0,
+                 pos_factor_concentration, pos_factor_phase, learning_rate, w_inh, log_act=False, log_et_is=False,
+                 log_theta=False, log_pos_input=False, log_after=0, config=Config(), d={}):
 
         AbstractNetwork.__init__(self, num_units, tau, log_act, log_theta, log_pos_input, log_after, config, d)
 
         self.et_tau = et_tau
         self.ins_signal_tau = ins_signal_tau
-        self.log_et = log_et
-        if self.log_et:
+        self.log_et_is = log_et_is
+        if self.log_et_is:
             self.et_log = np.empty((self.logged_steps, num_units))
+            self.is_log = np.empty((self.logged_steps, num_units))
 
         self.act_sigmoid_gain = act_sigmoid_gain
         self.act_sigmoid_midpoint = act_sigmoid_midpoint
@@ -47,16 +46,7 @@ class NetworkExtDriven(AbstractNetwork):
         self.sensory_fields = np.exp(-(np.arange(self.track.num_bins).reshape(-1, 1) - centers) ** 2 / (2 * sigma ** 2))
 
         self.w_inh = w_inh
-        self.w_exc_max = w_exc_max
-        self.k_plus = k_plus
-        self.alpha_plus = alpha_plus
-        self.beta_plus = beta_plus
-        self.k_minus = k_minus
-        self.alpha_minus = alpha_minus
-        self.beta_minus = beta_minus
-
         self.w_exc = np.zeros((self.num_units, self.num_units))
-        # self.w_exc = np.random.uniform(0, 0.01, (self.num_units, self.num_units))
 
         self.run(learning_rate, verbose=0)
 
@@ -84,16 +74,6 @@ class NetworkExtDriven(AbstractNetwork):
         ax.spines.top.set_visible(False)
         plt.colorbar(mat, ax=ax)
         self.maybe_save_fig(fig, "rec_weights")
-
-    def plot_q_functions(self):
-        x = np.linspace(0, 1, 1000)
-        q_plus = self.k_plus * self.sigmoid(x, self.alpha_plus, self.beta_plus)
-        q_minus = self.k_minus * self.sigmoid(x, self.alpha_minus, self.beta_minus)
-        fig, ax = plt.subplots()
-        ax.plot(x, q_plus, label=r'$k^+ q^+ (ET \cdot IS)$')
-        ax.plot(x, q_minus, label=r'$k^- q^- (ET \cdot IS)$')
-        ax.set_xlabel(r"$ET \cdot IS$")
-        ax.legend()
 
     @staticmethod
     def sigmoid(x, alpha, beta):
@@ -175,8 +155,9 @@ class NetworkExtDriven(AbstractNetwork):
                         self.act_log[i] = act.copy()
                     if self.log_pos_input:
                         self.pos_input_log[i] = pos_input
-                    if self.log_et:
+                    if self.log_et_is:
                         self.et_log[i] = et
+                        self.is_log[i] = ins_signal
 
             self.w_exc += learning_rate * max_overlaps
             self.w_exc /= np.max(np.maximum(self.w_exc, 1), axis=0)
@@ -268,6 +249,27 @@ class NetworkExtDriven(AbstractNetwork):
 
         self.maybe_save_fig(fig, "activities", dpi=500)
 
+    def plot_learning_traces(self, input_unit, output_unit, fig_size=(7*CM, 4*CM), y_lim=None):
+        time = np.arange(0, self.logged_steps*self.track.dt, self.track.dt)
+        input_act = self.act_out_log[:, input_unit]
+        output_act = self.act_out_log[:, output_unit]
+        et = self.et_log[:, input_unit]
+        ins_signal = self.is_log[:, output_unit]
+
+        fig, ax = plt.subplots(figsize=fig_size, constrained_layout=True)
+        ax.plot(time, input_act, label=fr"$\sigma_r(r_{{{input_unit}}})$")
+        ax.plot(time, output_act, label=fr"$\sigma_r(r_{{{output_unit}}})$")
+        ax.plot(time, et, label=fr"$e_{{{input_unit}}}$")
+        ax.plot(time, ins_signal, label=fr"$s_{{{output_unit}}}$")
+        ax.plot(time, et * ins_signal, color='k', label=fr"$o_{{{output_unit, input_unit}}}$")
+        ax.set_xlabel("Time (s)")
+        ax.legend()
+        ax.spines.top.set_visible(False)
+        ax.spines.right.set_visible(False)
+        ax.set_ylim(y_lim)
+
+        self.maybe_save_fig(fig, f"traces_{input_unit}_{output_unit}", dpi=500)
+
 
 if __name__ == "__main__":
     config = Config(identifier=1, variants={
@@ -278,7 +280,9 @@ if __name__ == "__main__":
                     figure_format='pdf')
     network = NetworkExtDriven.current_instance(config)
     # network.plot_sensory_fields()
-    network.plot_rec_weights()
-    # network.plot_q_functions()
+    # network.plot_rec_weights()
     network.plot_activities(apply_f=1, speed=1, et=0)
+    # network.plot_learning_traces(input_unit=10, output_unit=30, y_lim=(-0.03, 0.75))
+    # network.plot_learning_traces(input_unit=40, output_unit=30, y_lim=(-0.03, 0.75))
+
     plt.show()
