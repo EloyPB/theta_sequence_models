@@ -41,3 +41,5 @@ class AbstractNetwork(SmartSim):
         self.log_pos_input = log_pos_input
         if log_pos_input:
             self.pos_input_log = np.empty((self.logged_steps, num_units))
+
+        self.induction_speeds = None   # for NetworkIndep

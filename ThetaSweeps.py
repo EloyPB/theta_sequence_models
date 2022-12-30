@@ -210,7 +210,9 @@ class ThetaSweeps(SmartSim):
 
 if __name__ == "__main__":
     # plt.rcParams.update({'font.size': 11})
-    variants = {'NetworkIntDriven': 'IntDrivenLog80', 'NetworkExtDriven': 'ExtDrivenLog100'}
+    variants = {'NetworkIntDriven': 'IntDrivenLog80', 'NetworkExtDriven': 'ExtDrivenLog100',
+                'NetworkIndep': 'IndepLog80', 'PlaceFields': 'HighThreshold'
+                }
 
     sweeps = ThetaSweeps.current_instance(Config(identifier=1, variants=variants, pickle_instances=True,
                                                  figures_root_path=figures_path, pickles_root_path=pickles_path,

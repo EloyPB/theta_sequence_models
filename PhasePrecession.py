@@ -236,15 +236,18 @@ if __name__ == "__main__":
 
     pp = PhasePrecession.current_instance(
         Config(variants={'LinearTrack': 'ManyLaps', 'NetworkIntDriven': 'IntDrivenLog80',
-                         'NetworkExt:Driven': 'ExtDrivenLog100'}, identifier=1,
-               pickle_instances=True, save_figures=True, figures_root_path=figures_path, pickles_root_path=pickles_path,
+                         'NetworkExt:Driven': 'ExtDrivenLog100',
+                         'NetworkIndep': 'IndepLog80', 'PlaceFields': 'HighThreshold'
+                         }, identifier=1,
+               pickle_instances=True, save_figures=False, figures_root_path=figures_path, pickles_root_path=pickles_path,
                figure_format='pdf'))
     # for unit in [40, 60, 80, 100, 120]:
     #     pp.plot_cloud(unit)
     pp.slopes_vs_mean_speed(plot=True)
 
-    # pp.plot_clouds((40, 60, 80, 100, 120), fig_size=(7.5*CM, 7*CM))
-    pp.plot_clouds((10, 25, 40, 55, 70), fig_size=(5.5 * CM, 5.5 * CM))
+    # pp.plot_clouds((40, 60, 80, 100, 120), fig_size=(7.5*CM, 7*CM))  # NetworkIntDriven
+    # pp.plot_clouds((10, 25, 40, 55, 70), fig_size=(5.5 * CM, 5.5 * CM))  # NetworkExtDriven
+    pp.plot_clouds((12, 30, 38, 50, 66), fig_size=(5.5 * CM, 5.5 * CM))  # NetworkIndep
 
     # pp.fast_and_slow_slopes(plot=True)
 

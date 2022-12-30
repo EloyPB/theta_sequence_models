@@ -169,7 +169,7 @@ class PlaceFields(SmartSim):
             start = 0
             end = self.track.length
         starts = np.arange(start, end, self.dens_window_stride)
-        ends = np.arange(self.dens_window_size, end, self.dens_window_stride)
+        ends = np.arange(start + self.dens_window_size, end, self.dens_window_stride)
 
         speeds = []
         densities = []
@@ -315,6 +315,29 @@ class PlaceFields(SmartSim):
             ax.set_ylabel("Place field size (cm)")
             self.maybe_save_fig(fig, "slow_and_fast")
 
+    def size_vs_induction_speed(self, plot=False):
+        induction_speeds = []
+        sizes = []
+
+        for field_num, prominence_ok in enumerate(self.field_prominence_ok):
+            if not prominence_ok:
+                continue
+
+            peak_index = self.field_peak_indices[field_num]
+            bound_indices = self.field_bound_indices[field_num]
+            induction_speeds.append(self.network.induction_speeds[field_num])
+            sizes.append(self.size(peak_index, bound_indices, self.field_bounds_ok[field_num]))
+
+        self.maybe_pickle_results(induction_speeds, "induction_speeds", sub_folder="induction_speeds")
+        self.maybe_pickle_results(sizes, "sizes", sub_folder="induction_speeds")
+
+        if plot:
+            fig, ax = plt.subplots()
+            ax.scatter(induction_speeds, sizes)
+            ax.set_ylabel("Place field size (cm)")
+            ax.set_xlabel("Induction speed (cm/s)")
+            self.maybe_save_fig(fig, "size_vs_induction_speed")
+
 
 if __name__ == "__main__":
     # plt.rcParams.update({'font.size': 11})
@@ -322,14 +345,18 @@ if __name__ == "__main__":
     variants = {
         # 'LinearTrack': 'Many',
         'NetworkIntDriven': 'IntDrivenLog80',
-        'NetworkExtDriven': 'ExtDrivenLog100'
+        'NetworkExtDriven': 'ExtDrivenLog100',
+        'NetworkIndep': 'IndepLog80',
+        'PlaceFields': 'HighThreshold'
     }
     pf = PlaceFields.current_instance(Config(identifier=1, variants=variants, pickle_instances=True,
                                              figures_root_path=figures_path, pickles_root_path=pickles_path,
-                                             save_figures=True, figure_format='pdf'))
-    pf.plot_activations(fig_size=(5*CM, 5*CM))
-    pf.sizes_vs_mean_speed(colour_by_position=True, plot=True)
-    # pf.density_vs_mean_speed()
+                                             save_figures=False, figure_format='pdf'))
+    # pf.plot_activations(fig_size=(5*CM, 5*CM))
+    # pf.sizes_vs_mean_speed(colour_by_position=True, plot=True)
+    pf.density_vs_mean_speed(plot=True)
+
+    # pf.size_vs_induction_speed()
 
     # pf.compute_true_fields()
     # pf.plot_true_field(unit=67, start=25, fig_size=(4.25*CM, 3*CM))
