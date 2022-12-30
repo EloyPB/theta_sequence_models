@@ -4,7 +4,6 @@ from matplotlib import colors
 import matplotlib.ticker as ticker
 from matplotlib.ticker import FormatStrFormatter
 from AbstractNetwork import AbstractNetwork
-from LinearTrack import LinearTrack
 from generic.smart_sim import Config
 from batch_config import pickles_path, figures_path
 from small_plots import *
@@ -14,8 +13,6 @@ TWO_PI = 2 * np.pi
 
 
 class NetworkExtDriven(AbstractNetwork):
-    dependencies = [LinearTrack]
-
     def __init__(self, num_units, tau, et_tau, ins_signal_tau, sensory_field_sigma, act_sigmoid_gain,
                  act_sigmoid_midpoint, theta_min, theta_max, theta_concentration, pos_factor_0,
                  pos_factor_concentration, pos_factor_phase, learning_rate, w_inh, log_act=False, log_et_is=False,

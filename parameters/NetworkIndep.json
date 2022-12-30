@@ -1,0 +1,10 @@
+{
+  "num_units": 80,
+  "num_inputs": 100,
+  "et_tau": 0.6,
+  "ins_signal_tau": 0.2,
+  "act_sigmoid_gain": 6,
+  "act_sigmoid_midpoint": 0.5,
+  "input_sigma": 3,
+  "plateau_prob": 0.05
+}
