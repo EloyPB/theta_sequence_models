@@ -56,7 +56,7 @@ class SmartSim:
 
     @classmethod
     def complete_path(cls, root_path, identifier, variants):
-        variants_str = '_'.join(cls.variant_tags(variants))
+        variants_str = '_'.join(cls.variant_tags(variants)[::-1])
         if len(variants_str) == 0:
             variants_str = "Default"
         tag = (f"{identifier}_" if identifier is not None else "") + variants_str
@@ -69,7 +69,7 @@ class SmartSim:
             accumulated_tags.append(variants[cls.__name__])
         for dependency in cls.dependencies:
             accumulated_tags += dependency.variant_tags(variants)
-        return accumulated_tags[::-1]
+        return accumulated_tags
 
     def maybe_save_fig(self, fig, name, sub_folder="", dpi=300):
         """Save and close a figure if 'save_figures' is True.

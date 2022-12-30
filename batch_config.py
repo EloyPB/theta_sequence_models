@@ -5,8 +5,10 @@ from socket import gethostname
 
 NUM_RUNS = 10
 
+# choose network class in NetworkClass.py
+
 variants = {'NetworkIntDriven': 'IntDrivenLog80', 'NetworkExtDriven': 'ExtDrivenLog100', 'NetworkIndep': 'IndepLog80'}
-variants |= {'PlaceFields': 'HighThreshold'}  # for NetworkIndep
+variants |= {'PlaceFields': 'HighThreshold'}  # only for NetworkIndep
 
 
 # DEFINE PATHS (change according to your file system!)

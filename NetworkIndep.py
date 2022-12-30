@@ -38,10 +38,6 @@ class NetworkIndep(AbstractNetwork):
         self.theta_concentration = theta_concentration
         self.theta_multiplier = 1 / np.exp(theta_concentration)
 
-        # circular
-        # self.inputs = self.gaussian_inputs(sigma=input_sigma / self.track.ds)
-        # self.act_baseline = np.mean(np.sum(self.inputs, axis=1))
-
         sigma = input_sigma / self.track.ds
         centers = np.linspace(0, self.track.num_bins, num_inputs)
         self.inputs = np.exp(-(np.arange(self.track.num_bins).reshape(-1, 1) - centers) ** 2 / (2 * sigma ** 2))
@@ -69,15 +65,6 @@ class NetworkIndep(AbstractNetwork):
 
     def q_minus(self, x):
         return self.k_minus * 1 / (1 + np.exp(-self.beta_minus * (x - self.alpha_minus)))
-
-    def gaussian_inputs(self, sigma):
-        separation = self.track.length / self.num_inputs
-        centers = np.arange(separation / 2, self.track.length, separation).reshape(-1, 1)
-        x = np.arange(self.track.ds / 2, self.track.length, self.track.ds)
-        distances = np.min(np.stack((np.abs(centers - x),
-                                     np.abs(centers - x + self.track.length),
-                                     np.abs(centers - x - self.track.length))), axis=0)
-        return np.exp(-distances ** 2 / (2 * sigma ** 2)).T
 
     def plot_inputs(self):
         fig, ax = plt.subplots()
