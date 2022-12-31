@@ -216,8 +216,8 @@ if __name__ == "__main__":
 
     sweeps = ThetaSweeps.current_instance(Config(identifier=1, variants=variants, pickle_instances=True,
                                                  figures_root_path=figures_path, pickles_root_path=pickles_path,
-                                                 save_figures=False, figure_format='png'))
-    sweeps.plot(t_start=150.62, mark_edges=False, fig_size=(11*CM, 8.9*CM))
+                                                 save_figures=True, figure_format='pdf'))
+    sweeps.plot(t_start=150.62, mark_edges=False, fig_size=(15.9*CM, 6*CM))
     # sweeps.plot(t_start=151.256, t_end=151.632, mark_sweep=False, mark_edges=True, fig_size=(3.5*CM, 3.5*CM))  # zoom in
     sweeps.length_vs_mean_speed(plot=True)
     sweeps.ahead_and_behind_vs_mean_speed(plot=True)

@@ -71,7 +71,7 @@ class SmartSim:
             accumulated_tags += dependency.variant_tags(variants)
         return accumulated_tags
 
-    def maybe_save_fig(self, fig, name, sub_folder="", dpi=300):
+    def maybe_save_fig(self, fig, name, sub_folder="", dpi=400):
         """Save and close a figure if 'save_figures' is True.
 
         Args:

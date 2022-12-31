@@ -73,6 +73,8 @@ class PlaceFields(SmartSim):
         ax.set_xlabel("Position (cm)")
         bar = fig.colorbar(mat)
         bar.set_label("Activation")
+        ax.spines.right.set_visible(False)
+        ax.spines.top.set_visible(False)
         self.maybe_save_fig(fig, "place fields")
 
     def compute_fields(self, activations):
@@ -351,10 +353,10 @@ if __name__ == "__main__":
     }
     pf = PlaceFields.current_instance(Config(identifier=1, variants=variants, pickle_instances=True,
                                              figures_root_path=figures_path, pickles_root_path=pickles_path,
-                                             save_figures=False, figure_format='pdf'))
-    # pf.plot_activations(fig_size=(5*CM, 5*CM))
-    # pf.sizes_vs_mean_speed(colour_by_position=True, plot=True)
-    pf.density_vs_mean_speed(plot=True)
+                                             save_figures=True, figure_format='pdf'))
+    pf.plot_activations(fig_size=(4.87*CM, 5*CM))
+    pf.sizes_vs_mean_speed(colour_by_position=True, plot=True)
+    # pf.density_vs_mean_speed(plot=True)
 
     # pf.size_vs_induction_speed()
 

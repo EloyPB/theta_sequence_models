@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.ticker as ticker
 from AbstractNetwork import AbstractNetwork
 from generic.smart_sim import Config
 from batch_config import pickles_path, figures_path
@@ -66,28 +65,30 @@ class NetworkIndep(AbstractNetwork):
     def q_minus(self, x):
         return self.k_minus * 1 / (1 + np.exp(-self.beta_minus * (x - self.alpha_minus)))
 
-    def plot_inputs(self):
-        fig, ax = plt.subplots()
-        mat = ax.matshow(self.inputs.T, aspect='auto', origin='lower',
+    def plot_inputs(self, fig_size=(5.5*CM, 4.42*CM)):
+        fig, ax = plt.subplots(figsize=fig_size, constrained_layout=True)
+        mat = ax.matshow(self.inputs, aspect='auto', origin='lower', cmap='Oranges',
                          extent=(0, self.track.length, -0.5, self.num_inputs - 0.5))
         ax.xaxis.set_ticks_position('bottom')
-        ax.set_xlabel("Position (cm)")
-        ax.set_ylabel("Input #")
+        ax.set_ylabel("Position (cm)")
+        ax.set_xlabel("Input #")
         c_bar = plt.colorbar(mat, ax=ax)
         c_bar.set_label("Activation")
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         self.maybe_save_fig(fig, "sensory inputs", dpi=500)
 
-    def plot_q_functions(self):
+    def plot_q_functions(self, fig_size=(5.5*CM, 4.42*CM)):
         x = np.linspace(0, 1, 1000)
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=fig_size, constrained_layout=True)
         ax.plot(x, self.q_plus(x), label=r'$k^+ q^+ (ET \cdot IS)$')
         ax.plot(x, self.q_minus(x), label=r'$k^- q^- (ET \cdot IS)$')
         ax.set_xlabel(r"$ET \cdot IS$")
+        ax.spines.right.set_visible(False)
+        ax.spines.top.set_visible(False)
         ax.legend()
 
-    def run(self, verbose=1):
+    def run(self, verbose=0):
         theta_phase = 0
         pp_slopes = np.zeros(self.num_units)
         gauss_denom = 2 * self.pp_sigma**2
@@ -163,14 +164,14 @@ class NetworkIndep(AbstractNetwork):
         self.act_out_log = self.act_out_log[:, self.sorted_peak_indices]
         self.induction_speeds = self.induction_speeds[self.sorted_peak_indices]
 
-    def plot_weights(self):
-        fig, ax = plt.subplots()
-        mat = ax.matshow(self.w[self.sorted_peak_indices], aspect='auto', origin='lower')
+    def plot_weights(self, fig_size=(5.5*CM, 4.42*CM)):
+        fig, ax = plt.subplots(figsize=fig_size, constrained_layout=True)
+        mat = ax.matshow(self.w[self.sorted_peak_indices], aspect='auto', origin='lower', cmap='Greens')
         ax.xaxis.set_ticks_position('bottom')
-        ax.set_xlabel('Inputs')
-        ax.set_ylabel('Units (sorted by peak)')
+        ax.set_xlabel('Input #')
+        ax.set_ylabel('Place cell # (sorted by peak)')
         c_bar = plt.colorbar(mat, ax=ax)
-        c_bar.set_label("Weights values")
+        c_bar.set_label(r"$W_s$")
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         self.maybe_save_fig(fig, "Weights", dpi=500)
@@ -208,8 +209,6 @@ class NetworkIndep(AbstractNetwork):
 
         color_bar = plt.colorbar(mat, cax=ax[0, 1])
         color_bar.set_label("Activation")
-        # color_bar.locator = ticker.MultipleLocator(0.5)
-        # color_bar.update_ticks()
 
         if speed:
             time = np.arange(t_start, t_end, self.track.dt)
@@ -220,7 +219,6 @@ class NetworkIndep(AbstractNetwork):
             ax[1, 0].spines.top.set_visible(False)
 
         ax[1, 1].axis('off')
-
         self.maybe_save_fig(fig, "activities", dpi=500)
 
     def plot_learning_traces(self, input_unit, output_unit, before, after, fig_size=(7*CM, 4*CM)):
@@ -229,27 +227,34 @@ class NetworkIndep(AbstractNetwork):
         i_end = min(self.logged_steps, int(i + after / self.track.dt))
         time = np.arange(i_start, i_end)*self.track.dt
         fig, ax = plt.subplots(figsize=fig_size)
-        ax.plot(time, self.act_out_log[i_start:i_end, input_unit], label=rf"$r_{{{input_unit}}}$")
-        ax.plot(time, self.et_log[i_start:i_end, input_unit], label=rf"$e_{{{input_unit}}}$")
-        ax.plot(time, self.is_log[i_start:i_end, output_unit], label=rf"$s_{{{output_unit}}}$")
+        et = self.et_log[i_start:i_end, input_unit]
+        ins_signal = self.is_log[i_start:i_end, output_unit]
+        ax.plot(time, et, label=rf"$e_{{{input_unit}}}$")
+        ax.plot(time, ins_signal, label=rf"$s_{{{output_unit}}}$")
+        ax.plot(time, et * ins_signal, label=rf"$o_{{{output_unit, input_unit}}}$")
+        ax.set_xlabel("Time (s)")
+        ax.spines.right.set_visible(False)
+        ax.spines.top.set_visible(False)
         ax.legend()
+        self.maybe_save_fig(fig, "activities", dpi=500)
 
 
 if __name__ == "__main__":
 
     config = Config(identifier=1, variants={
         # 'LinearTrack': 'OneLap',
-        'LinearTrack': 'TenLaps',
-        'NetworkIndep': 'LogAll'},
-                    pickle_instances=True, save_figures=False, figures_root_path=figures_path,
+        # 'LinearTrack': 'TenLaps',
+        # 'NetworkIndep': 'IndepLogAll',
+        'NetworkIndep': 'IndepLog80'
+    },
+                    pickle_instances=True, save_figures=True, figures_root_path=figures_path,
                     pickles_root_path=pickles_path, figure_format='pdf')
 
     network = NetworkIndep.current_instance(config)
-    print(network.induction_speeds)
     # network.plot_inputs()
     # network.plot_q_functions()
-    network.plot_weights()
+    network.plot_weights(fig_size=(5.5*CM, 4.33*CM))
 
-    network.plot_activities(speed=1)
-    # network.plot_learning_traces(input_unit=10, output_unit=10, before=1, after=1)
+    # network.plot_activities(speed=1)
+    # network.plot_learning_traces(input_unit=70, output_unit=20, before=1, after=1, fig_size=(5.5*CM, 4.42*CM))
     plt.show()

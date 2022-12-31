@@ -115,7 +115,7 @@ class PhasePrecession(SmartSim):
             ax = fig.add_subplot(spec[row, 0])
 
             mat = ax.matshow(self.clouds[unit], aspect='auto', origin='lower', cmap=c_map,
-                             extent=(0, self.num_spatial_bins * self.spatial_bin_size, 0, 360), vmin=0, vmax=1)
+                             extent=(0, self.num_spatial_bins * self.spatial_bin_size, 0, 360), vmin=0)
             ax.plot(fit_x, fit_y, color='lightgray')
             ax.xaxis.set_ticks_position('bottom')
             # if row == len(units) // 2:
@@ -235,19 +235,21 @@ if __name__ == "__main__":
     # plt.rcParams.update({'font.size': 11})
 
     pp = PhasePrecession.current_instance(
-        Config(variants={'LinearTrack': 'ManyLaps', 'NetworkIntDriven': 'IntDrivenLog80',
-                         'NetworkExt:Driven': 'ExtDrivenLog100',
+        Config(variants={
+            'LinearTrack': 'ManyLaps',
+                         'NetworkIntDriven': 'IntDrivenLog80',
+                         'NetworkExtDriven': 'ExtDrivenLog100',
                          'NetworkIndep': 'IndepLog80', 'PlaceFields': 'HighThreshold'
                          }, identifier=1,
-               pickle_instances=True, save_figures=False, figures_root_path=figures_path, pickles_root_path=pickles_path,
-               figure_format='pdf'))
+               pickle_instances=True, save_figures=True, figures_root_path=figures_path, pickles_root_path=pickles_path,
+               figure_format='pdf', pickle_results=True))
     # for unit in [40, 60, 80, 100, 120]:
     #     pp.plot_cloud(unit)
-    pp.slopes_vs_mean_speed(plot=True)
+    # pp.slopes_vs_mean_speed(plot=True)
 
     # pp.plot_clouds((40, 60, 80, 100, 120), fig_size=(7.5*CM, 7*CM))  # NetworkIntDriven
-    # pp.plot_clouds((10, 25, 40, 55, 70), fig_size=(5.5 * CM, 5.5 * CM))  # NetworkExtDriven
-    pp.plot_clouds((12, 30, 38, 50, 66), fig_size=(5.5 * CM, 5.5 * CM))  # NetworkIndep
+    # pp.plot_clouds((10, 25, 40, 55, 70), fig_size=(7.5*CM, 7*CM))  # NetworkExtDriven
+    pp.plot_clouds((15, 28, 39, 53, 66), fig_size=(8.5*CM, 5.35*CM))  # NetworkIndep
 
     # pp.fast_and_slow_slopes(plot=True)
 

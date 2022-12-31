@@ -246,7 +246,7 @@ class NetworkExtDriven(AbstractNetwork):
 
         self.maybe_save_fig(fig, "activities", dpi=500)
 
-    def plot_learning_traces(self, input_unit, output_unit, fig_size=(7*CM, 4*CM), y_lim=None):
+    def plot_learning_traces(self, input_unit, output_unit, fig_size=(4.7*CM, 4.82*CM), y_lim=None):
         time = np.arange(0, self.logged_steps*self.track.dt, self.track.dt)
         input_act = self.act_out_log[:, input_unit]
         output_act = self.act_out_log[:, output_unit]
@@ -270,16 +270,16 @@ class NetworkExtDriven(AbstractNetwork):
 
 if __name__ == "__main__":
     config = Config(identifier=1, variants={
-        # 'LinearTrack': 'OneLap',
-        'LinearTrack': 'TenLaps',
+        'LinearTrack': 'OneLap',
+        # 'LinearTrack': 'TenLaps',
         'NetworkExtDriven': 'ExtDrivenLogAll'
-    }, pickle_instances=True, save_figures=False, figures_root_path=figures_path, pickles_root_path=pickles_path,
+    }, pickle_instances=True, save_figures=True, figures_root_path=figures_path, pickles_root_path=pickles_path,
                     figure_format='pdf')
     network = NetworkExtDriven.current_instance(config)
     # network.plot_sensory_fields()
     # network.plot_rec_weights()
-    network.plot_activities(apply_f=1, speed=1, et=0)
-    # network.plot_learning_traces(input_unit=10, output_unit=30, y_lim=(-0.03, 0.75))
-    # network.plot_learning_traces(input_unit=40, output_unit=30, y_lim=(-0.03, 0.75))
+    # network.plot_activities(apply_f=1, speed=1, et=0)
+    network.plot_learning_traces(input_unit=10, output_unit=30, y_lim=(-0.03, 0.75))
+    network.plot_learning_traces(input_unit=40, output_unit=30, y_lim=(-0.03, 0.75))
 
     plt.show()
