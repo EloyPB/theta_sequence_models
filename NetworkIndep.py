@@ -81,9 +81,9 @@ class NetworkIndep(AbstractNetwork):
     def plot_q_functions(self, fig_size=(5.5*CM, 4.42*CM)):
         x = np.linspace(0, 1, 1000)
         fig, ax = plt.subplots(figsize=fig_size, constrained_layout=True)
-        ax.plot(x, self.q_plus(x), label=r'$k^+ q^+ (ET \cdot IS)$')
-        ax.plot(x, self.q_minus(x), label=r'$k^- q^- (ET \cdot IS)$')
-        ax.set_xlabel(r"$ET \cdot IS$")
+        ax.plot(x, self.q_plus(x), label=r'$k_+ q_+ (e \cdot p)$')
+        ax.plot(x, self.q_minus(x), label=r'$k_- q_- (e \cdot p)$')
+        ax.set_xlabel(r"$e \cdot p$")
         ax.spines.right.set_visible(False)
         ax.spines.top.set_visible(False)
         ax.legend()
@@ -230,7 +230,7 @@ class NetworkIndep(AbstractNetwork):
         et = self.et_log[i_start:i_end, input_unit]
         ins_signal = self.is_log[i_start:i_end, output_unit]
         ax.plot(time, et, label=rf"$e_{{{input_unit}}}$")
-        ax.plot(time, ins_signal, label=rf"$s_{{{output_unit}}}$")
+        ax.plot(time, ins_signal, label=rf"$p_{{{output_unit}}}$")
         ax.plot(time, et * ins_signal, label=rf"$o_{{{output_unit, input_unit}}}$")
         ax.set_xlabel("Time (s)")
         ax.spines.right.set_visible(False)
@@ -242,18 +242,18 @@ class NetworkIndep(AbstractNetwork):
 if __name__ == "__main__":
 
     config = Config(identifier=1, variants={
-        # 'LinearTrack': 'OneLap',
+        'LinearTrack': 'OneLap',
         # 'LinearTrack': 'TenLaps',
         # 'NetworkIndep': 'IndepLogAll',
-        'NetworkIndep': 'IndepLog80'
+        # 'NetworkIndep': 'IndepLog80'
     },
                     pickle_instances=True, save_figures=True, figures_root_path=figures_path,
                     pickles_root_path=pickles_path, figure_format='pdf')
 
     network = NetworkIndep.current_instance(config)
     # network.plot_inputs()
-    # network.plot_q_functions()
-    network.plot_weights(fig_size=(5.5*CM, 4.33*CM))
+    network.plot_q_functions()
+    # network.plot_weights(fig_size=(5.5*CM, 4.33*CM))
 
     # network.plot_activities(speed=1)
     # network.plot_learning_traces(input_unit=70, output_unit=20, before=1, after=1, fig_size=(5.5*CM, 4.42*CM))

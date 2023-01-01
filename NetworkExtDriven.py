@@ -257,7 +257,7 @@ class NetworkExtDriven(AbstractNetwork):
         ax.plot(time, input_act, label=fr"$\sigma_r(r_{{{input_unit}}})$")
         ax.plot(time, output_act, label=fr"$\sigma_r(r_{{{output_unit}}})$")
         ax.plot(time, et, label=fr"$e_{{{input_unit}}}$")
-        ax.plot(time, ins_signal, label=fr"$s_{{{output_unit}}}$")
+        ax.plot(time, ins_signal, label=fr"$p_{{{output_unit}}}$")
         ax.plot(time, et * ins_signal, color='k', label=fr"$o_{{{output_unit, input_unit}}}$")
         ax.set_xlabel("Time (s)")
         ax.legend()
