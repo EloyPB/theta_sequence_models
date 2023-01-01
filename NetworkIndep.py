@@ -68,7 +68,7 @@ class NetworkIndep(AbstractNetwork):
     def plot_inputs(self, fig_size=(5.5*CM, 4.42*CM)):
         fig, ax = plt.subplots(figsize=fig_size, constrained_layout=True)
         mat = ax.matshow(self.inputs, aspect='auto', origin='lower', cmap='Oranges',
-                         extent=(0, self.track.length, -0.5, self.num_inputs - 0.5))
+                         extent=(-0.5, self.num_inputs - 0.5, 0, self.track.length))
         ax.xaxis.set_ticks_position('bottom')
         ax.set_ylabel("Position (cm)")
         ax.set_xlabel("Input #")
@@ -251,8 +251,8 @@ if __name__ == "__main__":
                     pickles_root_path=pickles_path, figure_format='pdf')
 
     network = NetworkIndep.current_instance(config)
-    # network.plot_inputs()
-    network.plot_q_functions()
+    network.plot_inputs()
+    # network.plot_q_functions()
     # network.plot_weights(fig_size=(5.5*CM, 4.33*CM))
 
     # network.plot_activities(speed=1)

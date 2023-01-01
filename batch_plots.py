@@ -116,7 +116,7 @@ def plot(name, class_def: Type[SmartSim], x_label, rel_path_x, y_label, rel_path
         fit = linregress(all_x, all_y)
         x_range = np.array((min(all_x), max(all_x)))
         ax.plot(x_range, x_range*fit.slope + fit.intercept, color='k')
-        print(f"slope = {fit.slope}, intercept = {fit.intercept}")
+        print(f"slope = {fit.slope}, intercept = {fit.intercept}, r = {fit.rvalue}")
 
     fig.savefig(f"{figures_path}/ALL/{name}.{format}", dpi=500)
 
@@ -167,12 +167,12 @@ if not os.path.exists(path):
 x_label = "Average speed (cm/s)"
 small_fig = (5*CM, 4*CM)
 
-plot("sizes", PlaceFields, x_label, "speeds", "Place field size (cm)", "sizes", "Position (cm)", "positions",
-     z_binned_average=True, z_bin_size=2, fig_size=(4.94*CM, 5*CM))
-plot_speed_ratios("size_increments", PlaceFields, "Fast / slow", "slow_and_fast_sizes",
-                  bin_size=0.05, fig_size=(3.75*CM, 2.3*CM))
-plot("densities", PlaceFields, x_label, "density/speeds", "Place field density (peaks/cm)", "density/densities",
-     alpha=0.5, x_binned_average=True, x_bin_size=2, fig_size=(3.73*CM, 4.9*CM))
+# plot("sizes", PlaceFields, x_label, "speeds", "Place field size (cm)", "sizes", "Position (cm)", "positions",
+#      z_binned_average=True, z_bin_size=2, fig_size=(4.94*CM, 5*CM))
+# plot_speed_ratios("size_increments", PlaceFields, "Fast / slow", "slow_and_fast_sizes",
+#                   bin_size=0.05, fig_size=(3.75*CM, 2.3*CM))
+# plot("densities", PlaceFields, x_label, "density/speeds", "Place field density (peaks/cm)", "density/densities",
+#      alpha=0.5, x_binned_average=True, x_bin_size=2, fig_size=(3.73*CM, 4.9*CM))
 # plot("separations", PlaceFields, x_label, "separation/speeds", "Place field separation (cm)",
 #      "separation/separations")
 # plot("shifts", PlaceFields, x_label, "shifts/speeds", "Place field shift (cm)", "shifts/shifts", "Position (cm)",
@@ -180,18 +180,18 @@ plot("densities", PlaceFields, x_label, "density/speeds", "Place field density (
 plot("sizes_vs_induction_speed", PlaceFields, "Induction speed (cm/s)", "induction_speeds/induction_speeds",
      "Place field size (cm)", "induction_speeds/sizes", fig_size=(3.7*CM, 4.9*CM), linear_fit=True)
 
-plot("slopes", PhasePrecession, x_label, "speeds", "1 / phase precession slope (cm/deg)", "slopes",
-     "Position (cm)", "positions", z_binned_average=True, z_bin_size=2, fig_size=(5.25*CM, 5*CM), multiple_locator=0.05)
-plot_speed_ratios("slope_increments", PhasePrecession, "Fast / slow", "slow_and_fast_slopes", fig_size=(3.75*CM, 2.3*CM))
-
-plot("sweep lengths", ThetaSweeps, x_label, "speeds", "Theta sweep length (cm)", "lengths", "Position (cm)", "positions",
-     z_binned_average=True, z_bin_size=2, s=5, format='png', fig_size=small_fig)
-plot("ahead lengths", ThetaSweeps, x_label, "ahead_and_behind/ahead_speeds", "Look-ahead distance (cm)",
-     "ahead_and_behind/ahead_lengths", "Position (cm)", "ahead_and_behind/ahead_real_pos",
-     z_binned_average=True, z_bin_size=2, s=5, format='png', fig_size=small_fig)
-plot("behind lengths", ThetaSweeps, x_label, "ahead_and_behind/behind_speeds", "Look-behind distance (cm)",
-     "ahead_and_behind/behind_lengths", "Position (cm)", "ahead_and_behind/behind_real_pos",
-     z_binned_average=True, z_bin_size=2, s=5, format='png', fig_size=small_fig)
+# plot("slopes", PhasePrecession, x_label, "speeds", "1 / phase precession slope (cm/deg)", "slopes",
+#      "Position (cm)", "positions", z_binned_average=True, z_bin_size=2, fig_size=(5.25*CM, 5*CM), multiple_locator=0.05)
+# plot_speed_ratios("slope_increments", PhasePrecession, "Fast / slow", "slow_and_fast_slopes", fig_size=(3.75*CM, 2.3*CM))
+#
+# plot("sweep lengths", ThetaSweeps, x_label, "speeds", "Theta sweep length (cm)", "lengths", "Position (cm)", "positions",
+#      z_binned_average=True, z_bin_size=2, s=5, format='png', fig_size=small_fig)
+# plot("ahead lengths", ThetaSweeps, x_label, "ahead_and_behind/ahead_speeds", "Look-ahead distance (cm)",
+#      "ahead_and_behind/ahead_lengths", "Position (cm)", "ahead_and_behind/ahead_real_pos",
+#      z_binned_average=True, z_bin_size=2, s=5, format='png', fig_size=small_fig)
+# plot("behind lengths", ThetaSweeps, x_label, "ahead_and_behind/behind_speeds", "Look-behind distance (cm)",
+#      "ahead_and_behind/behind_lengths", "Position (cm)", "ahead_and_behind/behind_real_pos",
+#      z_binned_average=True, z_bin_size=2, s=5, format='png', fig_size=small_fig)
 # plot("matched shifts", ThetaSweeps, "Place field shift (cm)", "ahead_and_behind/shifts",
 #      "Look-behind distance (cm)", "ahead_and_behind/behind_lengths", "Position (cm)",
 #      "ahead_and_behind/behind_real_pos", z_binned_average=True, z_bin_size=2, s=5, format='png',
