@@ -14,4 +14,4 @@ This repository contains code for simulating 3 types of models of behavior-depen
 
 The code is structured as a cascade of classes that depend on one another. Instantiated classes are stored as pickles so that they don't have to be generated every time they are needed.
 They are only re-generated if either the code or the parameters of the class itself or one of its dependencies has changed. 
-How this works is explained using an example at the bottom of *smart_sim.py*. 
+How this works is explained using an example at the bottom of *generic/smart_sim.py*. 
