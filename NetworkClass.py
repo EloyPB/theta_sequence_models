@@ -5,6 +5,6 @@ from NetworkIndep import NetworkIndep
 
 # Choose which network class to use
 
-# NetworkClass = NetworkIntDriven
+NetworkClass = NetworkIntDriven
 # NetworkClass = NetworkExtDriven
-NetworkClass = NetworkIndep
+# NetworkClass = NetworkIndep
