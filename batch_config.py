@@ -8,13 +8,13 @@ NUM_RUNS = 10  # number of independent simulations
 # choose network class in NetworkClass.py
 
 variants = {'NetworkIntDriven': 'IntDrivenLog80', 'NetworkExtDriven': 'ExtDrivenLog100', 'NetworkIndep': 'IndepLog80'}
-# variants |= {'PlaceFields': 'HighThreshold'}  # only for NetworkIndep
+# variants |= {'PlaceFields': 'HighThreshold'}  # comment this out only when using NetworkIndep
 
 
 # DEFINE PATHS (change according to your file system!)
 # This is where pickles and results will be saved (potentially several GB).
-# Currently, the code checks in which machine and I am, and whether my external drives are mounted or not.
-# You can comment that out and simply define "root_path" to whatever your like.
+# Currently, the code checks in which machine I am, and whether my external drives are mounted or not.
+# You can comment that out and simply define "pickles_path" and "figures_path" to whatever your like.
 
 host_name = gethostname()
 drive_names = ["INTENSO", "TOSHIBA"]

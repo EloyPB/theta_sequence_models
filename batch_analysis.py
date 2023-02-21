@@ -19,7 +19,7 @@ def analyze(identifier):
     pf.sizes_vs_mean_speed(plot=True)
     pf.slow_and_fast_sizes()
     pf.density_vs_mean_speed()
-    pf.field_peak_shifts(plot=True)
+    pf.field_peak_shifts(plot=True)  # only for NetworkIntDriven and NetworkExtDriven
     # pf.size_vs_induction_speed()  # only for NetworkIndep
     del pf
 
@@ -31,7 +31,7 @@ def analyze(identifier):
     sweeps = ThetaSweeps.current_instance(config)
     sweeps.length_vs_mean_speed(plot=True)
     sweeps.ahead_and_behind_vs_mean_speed(plot=True)
-    sweeps.behind_length_vs_peak_shift(plot=True)
+    sweeps.behind_length_vs_peak_shift(plot=True)    # only for NetworkIntDriven and NetworkExtDriven
 
 
 # RUN ANALYSES
