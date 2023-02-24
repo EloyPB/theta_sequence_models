@@ -1,6 +1,5 @@
 import copy
 import numpy as np
-import matplotlib.pyplot as plt
 from generic.smart_sim import Config, SmartSim
 from PlaceFields import PlaceFields
 from small_plots import *

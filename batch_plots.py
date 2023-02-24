@@ -7,7 +7,6 @@ from scipy.stats import linregress
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib import ticker
-import seaborn as sns
 from generic.smart_sim import SmartSim
 from batch_config import *
 from PlaceFields import PlaceFields
