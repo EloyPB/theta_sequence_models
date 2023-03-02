@@ -1,5 +1,5 @@
+matplotlib>=3.5.2
 numpy
-scipy
-matplotlib
 pandas
+scipy
 seaborn
