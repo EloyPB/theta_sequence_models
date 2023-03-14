@@ -8,6 +8,7 @@ NUM_RUNS = 10  # number of independent simulations
 # choose network class in NetworkClass.py
 
 variants = {'NetworkIntDriven': 'IntDrivenLog80', 'NetworkExtDriven': 'ExtDrivenLog100', 'NetworkIndep': 'IndepLog80'}
+variants |= {'LinearTrack': 'ManyLaps'}  # for fast / slow analysis with top and bottom 20% percentiles of speed
 # variants |= {'PlaceFields': 'HighThreshold'}  # comment this out only when using NetworkIndep
 
 

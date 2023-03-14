@@ -41,7 +41,8 @@ class LinearTrack(SmartSim):
         self.lap_start_steps = []
 
         self.mean_speeds = None
-        self.median_speeds = None
+        self.top_speeds = None
+        self.bottom_speeds = None
 
         # calculate mean lap duration
         x = 0
@@ -168,16 +169,17 @@ class LinearTrack(SmartSim):
             ax.set_xlabel("Position (cm)")
             ax.legend()
 
-    def compute_summary_speeds(self, bin_size, plot=False):
+    def compute_summary_speeds(self, bin_size, percentile=50, first_step=0, plot=False):
         num_bins = int(self.length / bin_size)
         bin_speeds = [[] for _ in range(num_bins)]
 
-        for x, speed in zip(self.x_log, self.speed_log):
+        for x, speed in zip(self.x_log[first_step:], self.speed_log[first_step:]):
             bin_num = int(x / bin_size)
             bin_speeds[bin_num].append(speed)
 
         self.mean_speeds = np.array([np.mean(speeds) for speeds in bin_speeds])
-        self.median_speeds = np.array([np.median(speeds) for speeds in bin_speeds])
+        self.bottom_speeds = np.array([np.percentile(speeds, percentile) for speeds in bin_speeds])
+        self.top_speeds = np.array([np.percentile(speeds, 100 - percentile) for speeds in bin_speeds])
 
         if plot:
             fig, ax = plt.subplots()
@@ -185,7 +187,8 @@ class LinearTrack(SmartSim):
             ax.plot(x_sp, self.speed_profile, label="profile", color='gray')
             x = np.arange(bin_size / 2, self.length, bin_size)
             ax.plot(x, self.mean_speeds, label="mean")
-            ax.plot(x, self.median_speeds, label="median")
+            ax.plot(x, self.bottom_speeds, label=f"bottom {percentile}%")
+            ax.plot(x, self.top_speeds, label=f"top {100 - percentile}%")
             ax.set_ylabel("Mean speed (cm/s)")
             ax.set_xlabel("Position (cm)")
             ax.legend()
@@ -198,5 +201,5 @@ if __name__ == "__main__":
     track.plot_features(fig_size=(7*CM, 12*CM))
     # track.plot_trajectory()
     # track.compute_mean_speeds(bin_size=2, plot=True)
-    # track.compute_summary_speeds(bin_size=2, plot=True)
+    track.compute_summary_speeds(bin_size=2, percentile=20, plot=True)
     plt.show()

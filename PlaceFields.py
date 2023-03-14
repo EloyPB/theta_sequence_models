@@ -14,12 +14,13 @@ class PlaceFields(SmartSim):
     dependencies = [NetworkClass]
 
     def __init__(self, bin_size, sigma, min_peak, threshold, prominence_threshold=0.33, last_unit=None,
-                 dens_window_size=10, dens_window_stride=2, config=Config(), d={}):
+                 dens_window_size=10, dens_window_stride=2, speed_percentile=50, config=Config(), d={}):
         SmartSim.__init__(self, config, d)
 
         self.network: AbstractNetwork = d[NetworkClass.__name__]
         self.track: LinearTrack = self.network.track
-        self.track.compute_summary_speeds(bin_size)
+        self.track.compute_summary_speeds(bin_size, percentile=speed_percentile,
+                                          first_step=self.network.first_logged_step)
 
         self.bin_size = bin_size
         self.num_bins = int(self.track.length / bin_size)
@@ -287,14 +288,21 @@ class PlaceFields(SmartSim):
             bar = fig.colorbar(sc)
             bar.set_label("Peak position (cm)")
 
-    def slow_and_fast_sizes(self, plot=False):
+    def slow_and_fast_sizes(self, plot=False, plot_fields=False):
         occupancies = np.zeros((2, self.num_bins), dtype=int) + 0.1
         activations = np.zeros((self.last_unit, 2, self.num_bins))
         for t_step in range(self.network.first_logged_step, len(self.track.x_log)):
             bin_num = int(self.track.x_log[t_step] / self.bin_size)
-            i = int(self.track.speed_log[t_step] > self.track.median_speeds[bin_num])
-            occupancies[i, bin_num] += 1
-            activations[:, i, bin_num] += self.network.act_out_log[t_step - self.network.first_logged_step][:self.last_unit]
+            speed = self.track.speed_log[t_step]
+            if speed > self.track.top_speeds[bin_num]:
+                occupancies[1, bin_num] += 1
+                activations[:, 1, bin_num] += self.network.act_out_log[t_step - self.network.first_logged_step][
+                                              :self.last_unit]
+            elif speed < self.track.bottom_speeds[bin_num]:
+                occupancies[0, bin_num] += 1
+                activations[:, 0, bin_num] += self.network.act_out_log[t_step - self.network.first_logged_step][
+                                              :self.last_unit]
+
         activations /= occupancies
 
         sizes = np.full((2, self.last_unit), np.nan)
@@ -316,6 +324,13 @@ class PlaceFields(SmartSim):
             ax.set_xticklabels(('Slow', 'Fast'))
             ax.set_ylabel("Place field size (cm)")
             self.maybe_save_fig(fig, "slow_and_fast")
+
+        if plot_fields:
+            fig, ax = plt.subplots(1, 2, constrained_layout=True)
+            ax[0].matshow(activations[:, 0])
+            ax[1].matshow(activations[:, 1])
+            ax[0].set_title("Bottom speed percentile")
+            ax[1].set_title("Top speed percentile")
 
     def size_vs_induction_speed(self, plot=False):
         induction_speeds = []
@@ -349,11 +364,11 @@ if __name__ == "__main__":
         'NetworkIntDriven': 'IntDrivenLog80',
         'NetworkExtDriven': 'ExtDrivenLog100',
         'NetworkIndep': 'IndepLog80',
-        'PlaceFields': 'HighThreshold'
+        # 'PlaceFields': 'HighThreshold'  # for NetworkIndep
     }
     pf = PlaceFields.current_instance(Config(identifier=1, variants=variants, pickle_instances=True,
                                              figures_root_path=figures_path, pickles_root_path=pickles_path,
-                                             save_figures=True, figure_format='pdf'))
+                                             save_figures=False, figure_format='pdf'))
     pf.plot_activations(fig_size=(4.87*CM, 5*CM))
     pf.sizes_vs_mean_speed(colour_by_position=True, plot=True)
     # pf.density_vs_mean_speed(plot=True)
@@ -364,6 +379,6 @@ if __name__ == "__main__":
     # pf.plot_true_field(unit=67, start=25, fig_size=(4.25*CM, 3*CM))
     # pf.field_peak_shifts(plot=True)
 
-    # pf.slow_and_fast_sizes(plot=True)
+    pf.slow_and_fast_sizes(plot=True, plot_fields=True)
 
     plt.show()

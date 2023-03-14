@@ -15,11 +15,11 @@ def analyze(identifier):
                     pickles_root_path=pickles_path)
 
     pf = PlaceFields.current_instance(config)
-    pf.plot_activations(fig_size=(4, 4))
+    # pf.plot_activations(fig_size=(4, 4))
     pf.sizes_vs_mean_speed(plot=True)
     pf.slow_and_fast_sizes()
-    pf.density_vs_mean_speed()
-    pf.field_peak_shifts(plot=True)  # only for NetworkIntDriven and NetworkExtDriven
+    # pf.density_vs_mean_speed()
+    # pf.field_peak_shifts(plot=True)  # only for NetworkIntDriven and NetworkExtDriven
     # pf.size_vs_induction_speed()  # only for NetworkIndep
     del pf
 
@@ -28,10 +28,10 @@ def analyze(identifier):
     pp.fast_and_slow_slopes()
     del pp
 
-    sweeps = ThetaSweeps.current_instance(config)
-    sweeps.length_vs_mean_speed(plot=True)
-    sweeps.ahead_and_behind_vs_mean_speed(plot=True)
-    sweeps.behind_length_vs_peak_shift(plot=True)    # only for NetworkIntDriven and NetworkExtDriven
+    # sweeps = ThetaSweeps.current_instance(config)
+    # sweeps.length_vs_mean_speed(plot=True)
+    # sweeps.ahead_and_behind_vs_mean_speed(plot=True)
+    # sweeps.behind_length_vs_peak_shift(plot=True)    # only for NetworkIntDriven and NetworkExtDriven
 
 
 # RUN ANALYSES

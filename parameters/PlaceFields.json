@@ -6,5 +6,6 @@
   "prominence_threshold": 0.5,
   "last_unit": 170,
   "dens_window_size": 10,
-  "dens_window_stride": 2
+  "dens_window_stride": 2,
+  "speed_percentile": 25
 }

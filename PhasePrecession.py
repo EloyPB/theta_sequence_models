@@ -176,16 +176,20 @@ class PhasePrecession(SmartSim):
         for t_step in range(len(self.network.act_out_log)):
             spatial_bin_num = int(self.track.x_log[t_step + self.network.first_logged_step] / self.spatial_bin_size)
             phase_bin_num = int(self.network.theta_phase_log[t_step] / self.phase_bin_size)
-            speed_factor = self.track.speed_factor_log[t_step + self.network.first_logged_step]
-            i = int(speed_factor > 1)
-            occupancies[i, phase_bin_num, spatial_bin_num] += 1
-            clouds[:, i, phase_bin_num, spatial_bin_num] += self.network.act_out_log[t_step][:self.num_units]
+
+            speed = self.track.speed_log[t_step + self.network.first_logged_step]
+            if speed > self.track.top_speeds[spatial_bin_num]:
+                occupancies[1, phase_bin_num, spatial_bin_num] += 1
+                clouds[:, 1, phase_bin_num, spatial_bin_num] += self.network.act_out_log[t_step][:self.num_units]
+            elif speed < self.track.bottom_speeds[spatial_bin_num]:
+                occupancies[0, phase_bin_num, spatial_bin_num] += 1
+                clouds[:, 0, phase_bin_num, spatial_bin_num] += self.network.act_out_log[t_step][:self.num_units]
 
         positive = occupancies > 0
         clouds[:, positive] = clouds[:, positive] / occupancies[positive]
 
         slopes = np.full((2, self.num_units), np.nan)
-        # intercepts = np.full((2, self.num_units), np.nan)
+        intercepts = np.full((2, self.num_units), np.nan)
 
         phase_span = self.phase_bin_size * (self.num_phase_bins - 1) * 180 / np.pi
         for i in range(2):
@@ -194,12 +198,9 @@ class PhasePrecession(SmartSim):
                 if all(bounds_ok):
                     slope, intercept = self.fit_cloud(cloud[:, bounds[0]:bounds[1]+1])
                     slopes[i, unit_num] = slope * phase_span / (self.spatial_bin_size * (bounds[1] - bounds[0]))
-                    # intercepts[i, unit_num] = intercept * phase_span
+                    intercepts[i, unit_num] = intercept * phase_span
 
-        slopes = 1/slopes
-        self.maybe_pickle_results(slopes, "slow_and_fast_slopes")
-
-        # This is just to check
+        # # This is just to check
         # unit = 80
         # fig, ax = plt.subplots(3, sharey='all', sharex='all')
         # bounds = self.fields.field_bound_indices[unit]
@@ -221,6 +222,9 @@ class PhasePrecession(SmartSim):
         # ax[2].plot(fit_x_rel, fit_y, color='orange')
         # print(slopes[0, unit], slopes[1, unit])
 
+        slopes = 1/slopes
+        self.maybe_pickle_results(slopes, "slow_and_fast_slopes")
+
         if plot:
             fig, ax = plt.subplots()
             ax.plot(slopes, color='C7')
@@ -237,20 +241,20 @@ if __name__ == "__main__":
     pp = PhasePrecession.current_instance(
         Config(variants={
             'LinearTrack': 'ManyLaps',
-                         'NetworkIntDriven': 'IntDrivenLog80',
-                         'NetworkExtDriven': 'ExtDrivenLog100',
-                         'NetworkIndep': 'IndepLog80', 'PlaceFields': 'HighThreshold'
-                         }, identifier=1,
-               pickle_instances=True, save_figures=True, figures_root_path=figures_path, pickles_root_path=pickles_path,
-               figure_format='pdf', pickle_results=True))
+            'NetworkIntDriven': 'IntDrivenLog80',
+            'NetworkExtDriven': 'ExtDrivenLog100',
+            'NetworkIndep': 'IndepLog80',
+            # 'PlaceFields': 'HighThreshold'  # for NetworkIndep
+            }, identifier=1, pickle_instances=True, save_figures=False, figures_root_path=figures_path,
+            pickles_root_path=pickles_path, figure_format='pdf', pickle_results=True))
     # for unit in [40, 60, 80, 100, 120]:
     #     pp.plot_cloud(unit)
     # pp.slopes_vs_mean_speed(plot=True)
 
-    # pp.plot_clouds((40, 60, 80, 100, 120), fig_size=(7.5*CM, 7*CM))  # NetworkIntDriven
+    pp.plot_clouds((40, 60, 80, 100, 120), fig_size=(7.5*CM, 7*CM))  # NetworkIntDriven
     # pp.plot_clouds((10, 25, 40, 55, 70), fig_size=(7.5*CM, 7*CM))  # NetworkExtDriven
-    pp.plot_clouds((15, 28, 39, 53, 66), fig_size=(8.5*CM, 5.35*CM))  # NetworkIndep
+    # pp.plot_clouds((15, 28, 39, 53, 66), fig_size=(8.5*CM, 5.35*CM))  # NetworkIndep
 
-    # pp.fast_and_slow_slopes(plot=True)
+    pp.fast_and_slow_slopes(plot=True)
 
     plt.show()
