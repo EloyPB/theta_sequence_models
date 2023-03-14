@@ -189,7 +189,7 @@ class LinearTrack(SmartSim):
             ax.plot(x, self.mean_speeds, label="mean")
             ax.plot(x, self.bottom_speeds, label=f"bottom {percentile}%")
             ax.plot(x, self.top_speeds, label=f"top {100 - percentile}%")
-            ax.set_ylabel("Mean speed (cm/s)")
+            ax.set_ylabel("Speed (cm/s)")
             ax.set_xlabel("Position (cm)")
             ax.legend()
 
